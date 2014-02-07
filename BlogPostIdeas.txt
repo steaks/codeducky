@@ -1,0 +1,29 @@
+Mixable unit tests - Organization of a flexible unit testing framework with Mixins
+To mock or not to mock - what you should or should not mock when unit testing
+Does increased testing coverage translate to increased code quality?
+Entity Framework: the 80-20 of what you need to know about the fluent API
+Use CSV files for unit tests
+Clever uses with the using block
+Gotchas with IDisposable
+Better reflection APIs
+Typesafe internationalization in C#
+Typesafe urls in ASP.Net MVC
+How to get around C#'s finicky implementation of switching on types
+Setting, run, results - how to make a good database structure for calc jobs
+Enumerate()
+C# and raw SQL
+Toggles: how and why to make your own Facebook Gatekeeper
+More object oriented code with lazy properties
+More object oriented code with data providers
+Logging events with Splunk
+How to run hackathons
+Hot to implement 20% time
+Git aliases that will save you hours
+Setting up Stackoverflow inhouse
+How we do sprints and agile development
+Include debugging information in your SQL database
+Designing for the future...but not too far
+IEnumerable vs IQueryable and performance issues
+Interesting uses for interface iplementation
+How statefulness makes seeming innocuous code dangerous
+Rubberduck debugging: how Codeducky got its name
