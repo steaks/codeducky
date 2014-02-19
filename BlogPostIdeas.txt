@@ -20,10 +20,12 @@ How to run hackathons
 Hot to implement 20% time
 Git aliases that will save you hours
 Setting up Stackoverflow inhouse
-How we do sprints and agile development
+How we sprints and agile development
 Include debugging information in your SQL database
 Designing for the future...but not too far
 IEnumerable vs IQueryable and performance issues
 Interesting uses for interface iplementation
 How statefulness makes seeming innocuous code dangerous
 Rubberduck debugging: how Codeducky got its name
+Client side rendering
+Importance of keeping an organized backlog
