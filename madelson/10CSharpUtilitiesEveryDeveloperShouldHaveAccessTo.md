@@ -40,7 +40,6 @@ foo.NullSafe(f => f.GetBar())
 To support invoking void methods at the end of the chain, just add an overload that takes Action<TObj> instead of Func<TObj>.
 
 <strong>Capped</strong>
-
 For some reason, I always find Max() and Min() to be confusing when trying to bound values, likely because you need Min() to set an upper bound and Max() to set a lower bound. Hence, I use a Capped() extension method to handle the common case of bounding a value within a range:
 
 <pre>
@@ -58,8 +57,8 @@ For example, bounding an integer to between 1 and 10 becomes:
 Instead of the (in my opinion) far-less-readable:
 <pre>var bound = Math.Max(1, Math.Min(value, 10));</pre>
 
-<strong>Traverse.Along</strong>
 
+<strong>Traverse.Along</strong>
 I've generally found that the LinkedList<T> data structure available in the BCL rarely comes up in everyday coding; in nearly all cases List<T> or IEnumerable<T> is preferable. That said, code I work with is often full of "natural" linked lists, such as the BaseType property on Type or the InnerException property on Exception. This handy method, which I adapted from some code I saw while browsing the <a href="https://code.google.com/p/autofac/">Autofac</a> codebase, makes it easy to work with these structures as IEnumerables without having to go through a cumbersome conversion loop each time:
 <pre>
 public static class Traverse
@@ -89,7 +88,6 @@ catch (Exception ex)
 Given this structure, it's easy to imagine similar utilities for doing depth-first, breadth-first, and other traversals of arbitrary tree-like data structures.
 
 <strong>As<T></strong>
-
 This method is essentially a type-safe, inline cast. Just looking at the implementation, it seems completely pointless:
 
 <pre>
