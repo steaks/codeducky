@@ -1,0 +1,16 @@
+madelson/codeducky00
+www.codeducky.thecodeshelf.com/wp-admin
+
+post in, edit in editor (preview)
+
+steaks on github, codeducky
+
+commit everything as .md file
+
+git branch postname
+add post
+commit and push origin postname
+
+idea: http://stackoverflow.com/questions/19742304/why-should-you-not-use-entity-framework-or-an-orm/19742480#19742480
+baseline 
+unit testing utilities

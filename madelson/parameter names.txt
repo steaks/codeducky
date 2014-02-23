@@ -1,0 +1,43 @@
+
+The power of parameter names
+ 
+•             Part of the signature
+•             Use defaults to indicate when null is allowed
+•             Code defensively against parameter re-ordering
+•             Name explicitly passed literals
+ 
+C# 4 introduced a powerful but often-overlooked feature: Named and Optional parameters (https://www.google.com/search?q=c%23+3.5&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-US:official&client=firefox-a&channel=sb)
+This has 2 primary effects. First, you can specify default values for parameters. This allows you to have flexible APIs without trying to created method overloads for all possible combinations of parameters someone might want to use:
+ 
+<pre>
+public static void DrawCircle(int radius, int x = 0, int y = 0, bool filled = true, Color? color = null)
+{
+}
+</pre>
+ 
+To specify just some of the arguments, you need the ability to name them explicitly:
+ 
+<pre>
+DrawCircle(10, x: 5, color: Color.Blue);
+</pre>
+ 
+While this is the most common scenario for named and optional arguments, I've found that there are other ways to use them to simply make code cleaner.
+ 
+1. Name arguments when passing literals
+ 
+There's nothing more frustrating than trying to read code that looks like this:
+ 
+<pre>
+ReadCustomer("Jerry", false);
+</pre>
+ 
+Without reading the method signature, this code is entirely unreadable. Is this ReadCustomer("Jerry", ignoreCase: false)? ReadCustomer("Jerry", throwIfNotFound: false)? ReadCustomer("Jerry", includeLocationData: false)? To avoid this issue, I've made it a general rule to always explicitly name parameters whenever it is not 100% clear what they mean in the context of the method call.
+ 
+2. Code defensively against parameter reordering
+Another benefit of explicitly naming your parameters is that your code becomes more defensive against refactors which change parameter order and against simple ordering mistakes. This is especially important for code which takes multiple parameters of the same or interchangeable types.
+ 
+3. Use defaults to call out parameters that are allowed to be null
+One of the most frustrating aspects of C# is that there is no good way to enforce or communicate when reference types might be null outside of runtime checks. That said, I've found that providing a null default can be a good way to indicate this, even if you don't expect callers to take advantage of the default argument very often.
+ 
+A final note:
+One thing that becomes clear if you adopt any of these practices is that, with the advent of named and optional arguments, parameter names have become as much a part of any public API as method, class, and property names. So, name your parameters with care!
