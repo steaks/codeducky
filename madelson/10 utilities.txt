@@ -314,7 +314,9 @@ var elementType = enumerable.GetType().GetGenericArguments()[0];
 The GetGenericArguments() below method makes it easy to do this kind of logic robustly by allowing you to specify which generic type definition you actually care about when fetching generic arguments:
 
 <pre>
-public static Type[] GetGenericArguments(this Type @this, Type genericTypeDefinition)
+public static Type[] GetGenericArguments(
+	this Type @this, 
+	Type genericTypeDefinition)
 {
 	if (genericTypeDefinition.IsInterface)
 	{
@@ -351,6 +353,8 @@ actually dealing with. Specifying the generic type definition makes the code mor
 what the result will be:
 
 <pre>
-var returnType = someParameterInfo.GetGenericArguments()[2] // not that readable
-var returnType = someParameterInfo.GetGenericArguments(typeof(Func<,,>))[2] // more readable
+// not that readable
+var returnType = someParameterInfo.GetGenericArguments()[2]
+// more readable
+var returnType = someParameterInfo.GetGenericArguments(typeof(Func<,,>))[2] 
 </pre>
