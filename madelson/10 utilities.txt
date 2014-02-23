@@ -1,5 +1,21 @@
 10 functions no .NET developer should be without
 
+* general-purpose
+Throw.if
+nullsafe
+capped / getvalues<T> / ToDelimitedString()
+as
+traverse
+
+* collections
+equalitycomparers
+collectionequals
+getoradd
+
+* reflection
+getproperty (should do getMethod)
+getgenericarguments
+
 IDEAS:
 * Equality in C#
 * LinqPad as a .NET developer's command prompt
@@ -121,7 +137,7 @@ public static IEqualityComparer<T> Create<T, TKey>(Func<T, TKey> keySelector)
 
 * Capped()
 
-For some reason, I always find Max() and Min() to be confusing, likely because you need Min() to set an upper bound and Max() to set a lower bound. Hence, I use a Capped() extension
+For some reason, I always find Max() and Min() to be confusing when trying to bound values, likely because you need Min() to set an upper bound and Max() to set a lower bound. Hence, I use a Capped() extension
 method to handle the common case of bounding a value within a range:
 
 <pre>
@@ -248,7 +264,7 @@ public static bool CollectionEquals<T>(this IEnumerable<T> @this, IEnumerable<T>
 }
 </pre>
 
-There are obviously many ways to write this; this one is fairly concise and O(N + M) time assuming that we have a good hash function for the collection elements.
+There are obviously many ways to write this; this one is fairly concise and O(N + M) time assuming that we have a good hash function for the collection elements. The other nice thing about this implementation is that it's very easy to evolve into an Assert utility for checking collection equality in unit tests. With natural points for capturing (1) items in @this and not in that and (2) items in that and not in @this, it's easy to fail with a very helpful error message explaining why the mismatch occurred.
 
 * GetOrAdd
 Dictionaries are frequently used for caching and memoization. You've no doubt come across the following pattern in code:
