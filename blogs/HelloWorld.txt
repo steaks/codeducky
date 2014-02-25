@@ -1,7 +1,0 @@
-Hello World!!!
-
-<pre>
-public void Hello() {
-	Console.Write("HELLO WORLD");
-}
-</pre>
