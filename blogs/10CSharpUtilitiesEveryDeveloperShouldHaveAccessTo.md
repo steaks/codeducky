@@ -1,4 +1,4 @@
-One of this things I like most about C# is that features like generics and extension methods make it easy to build utility methods to fill most gaps in the language and .NET base class libraries. Here are a few of my favorites. As a note, the implementations shown below are missing things argument validation in favor of brevity. For more complete implementations, check out <a href="https://gist.github.com/madelson/9177264" title="https://gist.github.com/madelson/9177264">https://gist.github.com/madelson/9177264</a>.
+One of the things I like most about C# is that features like generics and extension methods make it easy to build utility methods to fill most gaps in the language and .NET base class libraries. Here are a few of my favorites. As a note, the implementations shown below are missing things like argument validation in favor of brevity. For more complete implementations, check out <a href="https://gist.github.com/madelson/9177264" title="https://gist.github.com/madelson/9177264">https://gist.github.com/madelson/9177264</a>.
 
 <strong>Throw<TException>.If</strong>
 Assertions, argument checks, and other validity tests are a vital part of programming, but they can be surprisingly painful in C#. Debug.Assert() comes out of the box, but only works in a DEBUG build and doesn't let you specify the type of exception to be thrown. Meanwhile, spending 3 lines per check on if (...) { throw new ... } with Allman braces gets cumbersome very quickly. Throw<T>.If is a simple method that makes it easy to do 1-line checks while still maintaining the flexibility of using different exception types:
@@ -7,12 +7,13 @@ Assertions, argument checks, and other validity tests are a vital part of progra
 public static class Throw<TException> where TException : Exception
 {
     public static void If(bool condition, string message) 
-	{
-		if (condition)
-		{
-			throw (TException)Activator.CreateInstance(typeof(TException), message);
-		}
-	}
+    {
+        if (condition)
+        {
+            throw (TException)Activator.CreateInstance(typeof(TException), 
+                                                       message);
+        }
+    }
 }
 </pre>
 
@@ -34,8 +35,8 @@ public static TResult NullSafe<TObj, TResult>(
 With this extension, the above chain might be re-written as:
 <pre>
 foo.NullSafe(f => f.GetBar())
-	.NullSafe(b => b.Baz)
-	.NullSafe(b => b.SomeMethod(), ifNullReturn: "whatever you would return in the null case");
+   .NullSafe(b => b.Baz)
+   .NullSafe(b => b.SomeMethod(), ifNullReturn: "whatever you would return in the null case");
 </pre>
 To support invoking void methods at the end of the chain, just add an overload that takes Action<TObj> instead of Func<TObj>.
 
@@ -57,20 +58,20 @@ For example, bounding an integer to between 1 and 10 becomes:
 Instead of the (in my opinion) far-less-readable:
 <pre>var bound = Math.Max(1, Math.Min(value, 10));</pre>
 
-
+<br/>
 <strong>Traverse.Along</strong>
 I've generally found that the LinkedList<T> data structure available in the BCL rarely comes up in everyday coding; in nearly all cases List<T> or IEnumerable<T> is preferable. That said, code I work with is often full of "natural" linked lists, such as the BaseType property on Type or the InnerException property on Exception. This handy method, which I adapted from some code I saw while browsing the <a href="https://code.google.com/p/autofac/">Autofac</a> codebase, makes it easy to work with these structures as IEnumerables without having to go through a cumbersome conversion loop each time:
 <pre>
 public static class Traverse
 {
-	public static IEnumerable<T> Along<T>(T node, Func<T, T> next)
-		where T : class
-	{
-		for (var current = node; current != null; current = next(current))
-		{
-			yield return current;
-		}
-	}
+    public static IEnumerable<T> Along<T>(T node, Func<T, T> next) 
+            where T : class
+    {
+        for (var current = node; current != null; current = next(current))
+        {
+            yield return current;
+        }
+    }
 }
 </pre>
 
@@ -80,8 +81,8 @@ With Along(), finding a (possible) inner SqlException from an Exception becomes:
 catch (Exception ex)
 {
     var sqlException = Traverse.Along(ex, e => e.InnerException)
-		.OfType<SqlException>()
-		.FirstOrDefault();
+                               .OfType<SqlException>()
+                               .FirstOrDefault();
 }
 </pre>
 
@@ -101,7 +102,8 @@ inference. For example, you may have run into this problem:
 // the compiler complains that 'Type of conditional expression cannot be 
 // determined because there is no implicit conversion between 
 // 'System.Collections.Generic.List<int>' and 'System.Collections.Generic.HashSet<int>''
-ICollection<int> collection = someCondition ? new List<int>() : new HashSet<int>();
+ICollection<int> collection = someCondition ? new List<int>() 
+                                            : new HashSet<int>();
 </pre>
 
 The common fix is to add a cast:
@@ -145,3 +147,4 @@ var syncRoot = collection.SyncRoot
 // type-safe, 1 line!
 var syncRoot = new List<int>().As<ICollection>().SyncRoot;
 </pre>
+
