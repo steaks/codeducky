@@ -1,0 +1,12 @@
+odata
+
+- what is odata
+- what I want to use it for
+- what I want to build
+
+- part 1: the expression language (& toString)
+- part 2: lexing and parsing
+- part 3: odata to linq
+- part 4: projection & serialization
+- part 5: linq to odata
+- part 6: service & client pipelines
