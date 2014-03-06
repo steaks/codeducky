@@ -99,3 +99,88 @@ public sealed class ODataCallExpression : ODataExpression
 </pre>
 
 Hinted at but not shown in this example are a number of supporting enums and utility methods (e. g. the mapping between CLR types and OData types) which complete the model of the OData expression language. For a the complete view, check out <a href="https://github.com/madelson/MedallionOData/tree/master/MedallionOData/Trees">the relevant files on github</a>. With this basis, we now have an easy-to-use means of representing and manipulating the OData query language which will simplify many future tasks.
+
+<strong>A note on algebraic data types in C#</strong>
+
+At first glance, the specification for the ODataExpression type in C# seems rather clunky compared to other languages which support this pattern more directly. For example, in F# this would be (using <a href="http://msdn.microsoft.com/en-us/library/dd233226.aspx">F# discriminated union types</a>):
+
+<pre>
+type ODataExpression =
+    | Call of function : ODataFunction * arguments : ODataExpression list
+	| Constant of value : object * type : ODataExpressionType
+	...
+</pre>
+
+This representation is far more concise. F# also provides a benefit when "switching" on these types. In C#, one might write:
+
+<pre>
+switch (expression.Kind)
+{
+	case ODataExpressionKind.Call:
+		return ProcessCall((ODataCallExpression)expression);
+	case ODataExpressionKind.Constant:
+		return ProcessConstant((ODataConstantExpression)expression);
+	default:
+		// because C# enums can be a non-named value, this default case handling is always required
+		throw Throw.UnexpectedCaseValue(expression.Kind);
+}
+</pre>
+
+Whereas in F# this is:
+
+<pre>
+let result = 
+	match expression with
+	| Call(function, arguments) -> // do something with function and arguments
+	| Constant(value, type) -> // do something with value and type
+	| _ -> // the default case is only required if you are missing cases for all types... and the compiler will enforce this!
+</pre>
+
+Given these differences, when I first started implementing the expression language in C#, I took a detour over to F# to see whether that might offer a more elegant approach. However, I in doing so I found several shortcomings of F#'s discriminated unions. 
+
+First, there is the issue of argument validation. In C#, we use internal constructors to enforce the use of static factories, which contain validation. If we were worried about callers within the assembly, we could even make the constructors private and move the factories to the derived classes. In contrast, the F# approach as written does nothing to stop someone from creating an invalid expression (e. g. a call to a two-argument function with an argument list of length one). You can and should provide static factories in F# much like the ones in C#, but there does not seem to be a good way of forcing callers to use these factories while maintaining the ability to pattern match:
+
+<pre>
+module Shapes =
+	// adding the private keyword here makes the implementation of the type private to the module
+    type Shape = private Square of int | Circle of int
+    
+	// validated factory method example
+    let makeSquare side : Shape = 
+        if side < 0 then raise (System.ArgumentException("side"))
+        else Square(side)
+
+// works
+System.Console.WriteLine((Shapes.makeSquare 2).ToString())
+// fails with argument exception
+System.Console.WriteLine((Shapes.makeSquare -2).ToString())
+
+let x = match Shapes.makeSquare 2 with 
+    // won't compile if the implementation of Shape is private
+    | Shapes.Square(side) -> side
+    | _ -> 100
+
+// will compile UNLESS the implementation of Shape is private
+System.Console.WriteLine(Shapes.Square(-2).ToString())
+</pre>
+
+Another approach is make the component type of each case a strongly-typed class which itself has argument validation (e. g. | Square of SquareData). This solves the validation issue, but makes the expression type declaration a great deal more verbose and very similar to the C# approach (one type per case, with the discriminated union playing the roll of the enum).
+
+A second issue I came across is that there's no way to reference the case types directly outside of construction and pattern matching. For example, that means that we can't have a method that takes a Call expression as an argument. This makes it more difficult to encapsulate logic for handling certain types of expressions than in the C# case. It also prevents us from doing something like the following:
+
+<pre>
+public sealed class ODataMemberAccessExpression
+{
+	// in OData, member access (e. g. Foo.Bar) is only allowed on the implicit query parameter or another member expression
+	public ODataMemberAccessExpression Expression { get; private set; }
+	public PropertyInfo Member { get; private set; }
+}
+
+// or in F#
+type Expression =
+	// not allowed: has to be MemberAccess of Expression option * PropertyInfo, which is less type-safe!
+	| MemberAccess of MemberAccess option * PropertyInfo
+	...
+</pre>
+
+Thus, F# discriminated unions have both advantages and disadvantages as compared to the analogous C# pattern with respect to verbosity, type-safety, and argument validation. In the end, I decided to go with C# for this project because I found that my code benefited more from being able to reference case types directly than from concise pattern matching.
