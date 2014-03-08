@@ -1,0 +1,16 @@
+Compartmentalization vs. Extensibility
+- problem examples (e. g. analytic engine, stuff keeps leaking in due to business requirements)
+- general-purpose widgets -> they want something else in the middle
+
+Extensible APIs:
+	- grouping ids (for analysis)
+	- events for widgets
+	- solves the 80% use-case, but is imperfect
+
+Delay compartmentalization
+	- e. g. start with a private helper method, not a separate class. Over time, it will prove out whether this is the right split
+
+Build powerful utilities, and then "script" your business code
+	- put your design effort into utilities so that all the common non-business concerns become easy. Domain code can then be underdesigned; it's just a 
+	"script" and is 100% domain-focused
+	- easier to design good utilities in well-established domains
