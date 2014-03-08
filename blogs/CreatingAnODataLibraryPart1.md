@@ -19,7 +19,42 @@ It's true that .NET provides some great facilities for working with OData out of
 
 <strong>MedallionOData</strong>
 
-To this end, I've set out to build <a href="https://github.com/madelson/MedallionOData">MedallionOData</a>, a lightweight library which both makes it easy to add OData query capability to any endpoint, regardless of web framework and makes it easy to query said endpoints from .NET using LINQ.
+To this end, I've set out to build <a href="https://github.com/madelson/MedallionOData">MedallionOData</a>, a lightweight library which both makes it easy to add OData query capability to any endpoint, regardless of web framework and makes it easy to query said endpoints from .NET using LINQ. For example, I'd like to be able to create a web framework-independent OData endpoint with code like this:
+
+<pre>
+// MVC example. A caller might hit this action method with something like /Customers?$filter=Level eq Silver&$select=Name
+public ActionResult Customers()
+{
+	using (var dbContext = new CustomersContext())
+	{
+		IQueryable<Customer> customersQuery = dbContext.Customers;
+		var url = this.Request.Url;
+		
+		// here's where the library comes in
+		// Apply will automatically do customersQuery.Where(c => c.Level == "Silver").Select(c => new { c.Name })
+		var results = OData.Apply(customersQuery, url);
+		return this.Json(results);
+	}
+}
+</pre>
+
+On the client side, I'd like to be able to query the above endpoint with code like this:
+
+<pre>
+// when ToArray is called, we'll issue a request to the remote OData service
+// to populate the results
+var silverCustomerNames = OData.Query<Customer>("myservice.com/Customers")
+	.Where(c => c.Level == "Silver")
+	.Select(c => c.Name)
+	.ToArray();
+
+// to make this even easier, I'd like to be able to take things 1 step farther
+// by not requiring the client to build out a strongly-typed service data model
+var silverCustomerNames = OData.Query<ODataRow>("myservice.com/Customers")
+	.Where(c => c.Get<string>("Level") == "Silver")
+	.Select(c => c.Get<string>("Name"))
+	.ToArray();
+</pre>
 
 This involves implementing a multi-step request pipeline involving steps on both the remote service and the client:
 
