@@ -56,7 +56,8 @@ internal enum ODataTokenKind
 }
 </pre>
 
-2. Build up a list matching each token type to a matching regex pattern. The list is in descending order of precedence, so that "eq" matches as the equality operator before matching as the identifier "eq":
+2. Build up a list matching each token type to a matching regex pattern 
+I built the following list, which is in descending order of precedence. This means that "eq" matches as the equality operator before matching as the identifier "eq":
 
 <pre>
 const string followedByNonWord = @"(?=\W|$)";
@@ -109,7 +110,8 @@ The TupleList class is a simple convenience class which allows you to concisely 
 public class TupleList<T1, T2> : List<Tuple<T1, T2>> { public void Add(T1 t1, T2 t2) { this.Add(Tuple.Create(t1, t2)); } }
 </pre>
 
-3. We then can then use this list of patterns to build a regex which acts as our lexer:
+3. Combine the patterns into a regex:
+I created the following Regex and wrapping Lexer class to split a string into OData tokens:
 
 <pre>
 static class Lexer
@@ -130,6 +132,8 @@ static class Lexer
 		);
 	}
 	
+	// Note that we return the entire Match object instead of just the text of the match. This is because a Match knows its index,
+	// which is very useful for creating error messages
 	public static IEnumerable<Tuple<ODataTokenKind, Match>> Lex(string text)
 	{
 		return Pattern.Matches(text).Cast<Match>()
@@ -141,3 +145,13 @@ static class Lexer
 	}
 }
 </pre>
+
+For the complete lexer implementation, check out <a href="https://github.com/madelson/MedallionOData/blob/master/MedallionOData/Parser/ODataExpressionLanguageTokenizer.cs">the source</a>.
+
+<strong>The parser</strong>
+
+With the lexer in place, we can begin building a parser. I chose to go with a <a href="http://en.wikipedia.org/wiki/Recursive_descent_parser">recursive descent</a> approach, which is likely the simplest type of parser you can build by hand.
+
+<strong>Conclusion</strong>
+
+The lexer and parser complete the first step of implementing an OData service endpoint: parsing the OData query string into strongly-typed expressions. Next time, we'll look at how these expressions can be converted to LINQ so that they can actually be used to perform the filtering, sorting, and paging they represent.
