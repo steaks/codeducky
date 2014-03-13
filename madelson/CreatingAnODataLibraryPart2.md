@@ -150,7 +150,24 @@ For the complete lexer implementation, check out <a href="https://github.com/mad
 
 <strong>The parser</strong>
 
-With the lexer in place, we can begin building a parser. I chose to go with a <a href="http://en.wikipedia.org/wiki/Recursive_descent_parser">recursive descent</a> approach, which is likely the simplest type of parser you can build by hand.
+With the lexer in place, we can begin building a parser. I chose to go with a <a href="http://en.wikipedia.org/wiki/Recursive_descent_parser">recursive descent</a> approach, which is likely the simplest type of parser you can build by hand. A recursive descent parser always has to know exactly what it will parse next (or be able to decide this via looking ahead at the token stream). That means that it starts by attempting to parse the lowest-priority type of expression, and then moves recursively down to higher priority constructs. For this reason, the first step is to build out the set of priority-ordered constructs:
+
+<pre>
+// precedence described by https://tools.oasis-open.org/issues/browse/ODATA-203
+// * highest priority *
+// group = ( expression )
+// call = id ( expressionList )
+// memberaccess = id [/ id]*
+// simple = [literal | call | memberaccess | group]
+// unary = [not]? simple
+// factor = unary [[+ | -] unary]*
+// term = factor [[* | / | %] factor]*
+// comparison = term [[eq | ne | ...]* term]
+// andExpression = comparison [and comparison]*
+// orExpression = andExpression [or andExpression]*
+// expression = orExpression
+// expressionList = expression [, expression]*
+</pre>
 
 <strong>Conclusion</strong>
 
