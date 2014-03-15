@@ -1,164 +1,61 @@
-Write Debugger friendly Data Models
-
-Fixing bugs in production stinks!  One of the many reasons is that it takes time away from feature development.  While fixing bugs I often can't help but make a calculation in my head:
+Fixing bugs in production stinks!  Among the many reasons, it takes time away from feature development.  My mind always wanders towards the equation below while fixing bugs:
 <pre>
-X time fixing this bug = - X time of feature development = Y lost valuable features
+X time fixing bugs = - X time feature development = Y fewer features
 </pre> 
-With this equation in mind I try to find ways to minimize time needed to fix bugs.  Of course I try to eliminate as many bugs as possible in my code.  But for those that do seep out, I try to help myself by creating data models that make debugging easier. 
+<br/>
+First and foremost, I try to eliminate bugs from my code.  But for those that seep out, I try to write data models that make debugging easier so I can spend less time debugging and more time developing features.
 
-I generally use relational databases for persisting data.  So I'll explain my implementations in SQL, but these concepts can be applied to many technologies.  I find I create data models that make debugging easier when I try accomplish two goals by following three guidelines.
+I generally use relational databases to persist data.  So I'll explain my implementations in SQL, but these concepts can be applied to many technologies.  
 
-<strong>Goals:</strong>
+I try achieve two goals by following three guidelines when building debugger friendly data models.
+
+Goals:
 <ul>
-	<li>Allow developers to be able to difinitively understand how, by whom, and when a record was created.</li>
-	<li>Allow developers to be able to quickly understand how, by whom, and when a record was created.</li>
+	<li><strong><span style=color:#339966;">Developers should be able to <i>definitively</i> deduce how, by whom, and when any important record was created.</span></strong></li>
+	<li><strong><span style=color:#339966;">Developers should be able to <i>quickly</i> deduce how, by whom, and when any important record was created.</span></strong></li>
 </ul>
 
-<strong>Guidelines</strong>
+Guidelines:
 <ul>
-	<li><strong>Make your datamodels deterministic</strong></li>
-	<li><strong>Place meta information in strategically placed meta columns<strong></li>
-	<li><strong>Place meta information that doens't naturally fit into meta columns in logging tables</strong></li>
+	<li><strong>Make critical areas of the datamodels deterministic</strong></li>
+	<li><strong>Place meta information in the datamodel where valuable</strong></li>
+	<li><strong>Place meta information in logging tables where valuable</strong></li>
 </ul>
 
-<strong>Make your data models deterministic</strong>
-The only way to allow developers to difinitively be able to understand how records are created is to make your data models deterministic.  Developers should be able to look at the data model in any state and be able to difinitively deduce how each record was created...well developers should be able to difinitively determine how each interesting record was created.  Certainly, there will be less sensitive parts of your data model which don't need to uphold this property.  Generally, immutabliity translates to determinism.  So make sensitive parts of your data model deterministic by leveraging immutibility.
+<strong>Make critical areas of datamodels deterministic</strong>
+If you're like me, you've encountered the following scenario:  problematic record "a" was generated using records "b" and "c."  So you look at records "b" and "c" only to find that they have completely mutated from their state when record "a" was created.  Now you have no way to determine how record "a" was created.  Said in other words, you were not able to definitively determine how record "a" was created because your data model is not deterministic.
 
-I'll explain three design patters that work together to guarentee determinism by leveraging immutibility.  These design patterns came from years of iteration and insight from many talented engineers at Applied Predictive Technologies.  So please don't give me too much credit.  I'm simply sharing.
+I leverage immutability to preserve determinism in more sensitive areas of my data models.  I'll use a simple example to explain how I use immutability and the power it provides for debugging.  
 
-In our product we make a lot of mathematical calculations.  Generally, these calculations execute interesting algorithms that can run from 30 seconds to 5 hours.  The general structure of these calculations is that we pass in a set of settings to a calculation process which spits out a set of results.  I'll use a simple example to explain how we use the first of three design patterns to capture the calculation information.
+Recently, I've spent too much time at <a href="http://en.wikipedia.org/wiki/Barnes_%26_Noble">Barnes and Noble</a>.  When I notice a price change for a book I want to purchase I think to myself: "wow I'm so smart for waiting!" if the price decreased or "dammit, I knew I should have bought it earlier" if the price increased.  After my euphoria or dismay I begin to wonder how Barnes and Noble prices their books.  
 
-<strong>
-Example: Calculate likelyhood that each swimmer will win a race.  We use information about a swimmer's expected race time, race time variance, and boost from crowd size (we assume that certain swimmers swim better/worse with larger crowds because of nerves and adreneline) to calculate his likelyhood of winning the race.
-</strong>
+For our example, let's try to implement an ultra simplistic data model for book pricing calculations.  Imagine books prices are determined by the cost to manufacture a book, an author's popularity, and the season (prices spike during the winter holidays).  
 
-<strong>Components</strong>
-<ul>
-	<li>Aggregate Settings</li>
-	<li>Individual Result Settings</li>
-	<li>Calculation Run</li>
-	<li>Results</li>
-</ul>
+First, let's construct the naive data model which does not leverage immutability to preserve determinism.  Later we'll contrast this data model with an improved version.
 
-<strong>Aggregate Settings</strong>
-We'll need to know the type of race (100 meter fly, 200 meeter IM, etc.) to get each swimmer's expected time and the location of the pool to get each swimmer's boost from home pool advantage.  We'll create a table with immutable records to store this information.
+We need books, authors, and seasons.  We'll calculate book prices from book pricing settings that reference a book, author, and season.
 
-dbo.swimRaceSettings
-swimRaceSettingId
-poolId
-swimRaceType
+<a href="http://www.codeducky.org/wp-content/uploads/2014/03/naiveDatabase1.png"><img src="http://www.codeducky.org/wp-content/uploads/2014/03/naiveDatabase1.png" alt="database diagram for naive book pricing database" width="598" height="527" class="aligncenter size-full wp-image-203" /></a>
 
-If you're paying careful attention, you'll notice that pools must be immutable for swim race settings to be immutable.  For this example, we'll assume that pools in our data model are immutable.  A bit later on I'll explain another nice pattern we use to keep potentially changing constructs, like pools, preserve immutable characteristics.
+This data model provides everything we need to price books.  We have the manufacturing cost of a book, the author's popularity, and season.  However, remember that a book's manufacturing cost can change when <a href="http://en.wikipedia.org/wiki/Economies_of_scale">economies of scale</a> come into play.  And an author's popularity can vary.  Now imagine a store manager complains that <a href="http://en.wikipedia.org/wiki/Inferno_(Dan_Brown_novel)">Inferno</a> was overpriced this past holiday season.  He claims there's a bug in our pricing algorithm.  Naturally, we think our pricing algorithm works just fine so we set out to prove him wrong.  Uh oh!  We know what the book's price was in December.  It was higher in then than now.  But we can't say for sure why.  Was it only because of seasonality?  Did Dan Brown's popularity decrease recently?  Did the manufacturing cost of the book change?  We can't know what the author's popularity and manufacturing cost were in December because they both may have mutated.  Now, it's going to take a long time and creative debugging techniques to understand how we priced Inferno in December.
 
-<strong>Individual Result Settings</strong>
-We need to know the swimmers in the race to know who to make our calculations for and so we can compare the racers to calculate each racer's chance of beating all other racers.  We'll create a table, again with immutable records, to store this information.
+Let's try to help ourselves by expressing books and authors with immutability baked in.  We'll separate books and authors into two tables respectively.  One table will include data not sensitive enough to require immutability.  The second table will include data that we want to express in immutable concepts.
 
-dbo.swimRaceSwimmerSettings
-swimRaceSwimmerSettingId
-swimRaceCalculationId
-swimmerId
+<a href="http://www.codeducky.org/wp-content/uploads/2014/03/improvedDefnitions.png"><img src="http://www.codeducky.org/wp-content/uploads/2014/03/improvedDefnitions.png" alt="database diagram for improved book pricing database with immutability" width="581" height="753" class="aligncenter size-full wp-image-205" /></a>
 
-If you're paying careful attention, you'll notice that I've associated an individual result with a "swim race calculation" (defined below) rather than a setting.  I associate individual results with the calculation rather than the aggregate setting because it gives us flexibility to use aggregate settings for different calculations.  For our example imagine we want to calculate two heats of the 100 meter fly.  We can reuse our aggegate settings for different individual swimmers.  Also, like pools, swimmers must be immutable.  Later I'll explain a nice way to make swimmers, who impove over time, preserve immutable properties.
+Notice we've split books and authors into a wrapper table which points to a definition.  All records in the wrapper tables are mutable, and all records in the definition tables are immutable.  To update a book or author's definition we create a new record in the appropriate definition table and point the book or author to the new definition.  Also, we only use immutable definitions in our calculation tier and other sensitive areas.  Now when our store manager asks why Inferno was priced so high in December, we can quickly look at the book and author definitions used to calculate the price.
 
-<strong>Calculation Run</strong>
-We want to store information about the actual calculation and the settings used for our calculation.  We'll create a table, again with immutable records, to store this information.
+<strong>Place meta information in the datamodel where valuable</strong>
+Remember that one of our goals is to help developers quickly determine how records in the database were created.  Useful meta information can speed up the debugging process dramatically.  Up to this point we haven't provided any meta information about when and by whom books or authors were created in our database.  Books, authors, and prices contain a lot of the same meta data, so we should store that information in common in a common table.  We'll call that table "metaInfo."
 
-dbo.swimRaceCalculation
-swimRaceCalculationId
-swimRaceSettingId
+<a href="http://www.codeducky.org/wp-content/uploads/2014/03/meatInfo.png"><img src="http://www.codeducky.org/wp-content/uploads/2014/03/meatInfo.png" alt="database diagram for meta info for books, authors, and book prices" width="529" height="579" class="aligncenter size-full wp-image-207" /></a>
 
-<strong>Individual Results</strong>
-Finally, we need a place to store the results.  We'll create a table, again with immutable records, to store the results.
+<strong>Place meta information in logging tables where valuable</strong>
+Again, remember that one of our goals is to help developers quickly determine how a record in the database was created.  There is often meta information that does not naturally fit into our data model.  Take care to not disregard this information immediately.  Instead use log tables to include information that will help debugging.   I suspect users will want to update author popularity often, so let's keep a log of when and who updated author definitions to help us for debugging.
 
-dbo.swimRaceSwimmerResults
-swimRaceSwimmerSettingId
-swimRaceRunId
-percentChanceOfWinning
+<a href="http://www.codeducky.org/wp-content/uploads/2014/03/authorDefinitionChangeLog.png"><img src="http://www.codeducky.org/wp-content/uploads/2014/03/authorDefinitionChangeLog.png" alt="database diagram for author definition change log" width="248" height="171" class="aligncenter size-full wp-image-210" /></a>
 
-Now we've linked the calculations for each swimmer to their respective swimmer settings and to the aggregate swim race settings through the calculation table.
+<strong>Final data model</strong>
+Finally, we can put all the pieces to create a data model which has deterministic critical areas, meta information in strategic columns, and meta information in strategic logging tables.  Developers can <strong><span style=color:#339966;">quickly</span></strong> and <strong><span style=color:#339966;">definitively</span></strong> determine how, by whom and when we calculated prices for Inferno to be sold during the holiday season.
 
-
-Ok, so that's it.  Four simple immutable tables which hold information about settings, calculations, and results.  This pattern allows us to keep our data models deterministic.  It's easy for developers to determine what settings were used to calculate results.  And it's easy for developers to reproduce a calculation which should reproduce the same results.  These two abilities really help debugging because it makes identifying the problematic settings quickly.  And it makes investigataing the problematic settings easier.
-
-So I mentioned earlier that pools and swimmers must be immutable to achieve the full power of this data model.  Unfortunately pools and swimmers are not immutable concepts.  Swimmers for example get stronger as the train and pools undergo construction to build bigger fan sections.  This leads us towards our second useful design pattern.
-
-We'll express pools and swimmers in immutable terms by separating the entities into two parts.  In one table we'll store meta information about swimmers and pools.  This is information like names, date created, age, etc. that does not effect calculations.  In a second table we'll store snapshots of a swimmer or pool's attributes that effect calculations.  I like to think of these tables as definition tables because the define the characteristics of an entity at a point in time.
-
-dbo.swimmer
-swimmerId
-swimmerDefinitionId
-name
-birthday
-
-dbo.swimmerDefinition
-swimmerDefinitionId
-responseToHomeCrowdFactor
-
-dbo.swimmerExpectedRaceTimes
-swimmerDefinitionId
-swimRaceType
-expectedTime
-variance
-
-dbo.pool
-poolId
-poolDefinitionId
-complexName
-
-dbo.poolDefinition
-poolDefinitionId
-crowdSize
-
-Notice that swimmers point to their respective swimmer definitions and pools point to their respective pool definitions.  If we ever want to record a swimmer's improvement or pool construction we create a new swimmer definition or pool definition.  Then we point the swimmer to the new swimmer definition or pool to the new pool definition.  Furthermore, now that we have immutable constructs to express information necessary for swim race calculations, we'll use swimmer definitions and pool definitions rather than swimmers and pools.  You can see this change in the final data model layout at the end of this post. 
-
-<strong>Place meta information in strategically placed meta columns<strong>
-Up to this point we haven't provided any meta information about how long a calculation took, which user kicked off the calculation, or if a user deleted a record.  So let's add that information with one thought in mind.  We want to be able to quickly and definitively determine what and how a record was created.  And this leads us to the third data model.  We'll store meta information about similiar types in common tables.
-
-We'll store common meta information about calculations in a base calculations table.
-
-dbo.calculations
-calculationId
-calculationType
-status
-dateCreated
-dateStarted
-dateCompleted
-duration
-userId
-
-dbo.swimRaceCalculation
-calculationId
-swimRaceSettingsId
-
-We like to store when, by whom, and how entities were created.
-
-dbo.entities
-entityId
-entityType
-dateCreated
-createdBy
-dateDeleted
-deletedBy
-dateLastModified
-modifiedBy
-
-dbo.swimmer
-entityId
-swimmerDefinitionId
-name
-birthday
-
-dbo.pool
-entityId
-poolDefinitionId
-complexName
-
-<strong>Place meta information that doens't naturally fit into meta columns in logging tables</strong>
-Finally, there is usally information that we determine is not important enough to take up space in the main data model tables.  If this infomation provides useful debugging information it can be important to include this information in log tables.  Keep in mind that our goal is to help developers quickly and dinfinitively determine how a record in the database was created.  With our data model we don't log when swimmer or pool definitions have changed.  Perhaps we want to create a logging table which records when a swimmer or pool's definition was updated.  In other words, we may want to remember every time a swimmer got stronger or a pool underwent construction.
-
-dbo.entityDefinitionChanges
-entityId
-oldDefinitionId
-newDefinitionId
-dateChanged
-changedBy
+<a href="http://www.codeducky.org/wp-content/uploads/2014/03/fullDebuggerFriendlyDataModelsDiagram4.png"><img src="http://www.codeducky.org/wp-content/uploads/2014/03/fullDebuggerFriendlyDataModelsDiagram4.png" alt="database diagram for debugger friendly data models" width="608" height="1214" class="aligncenter size-full wp-image-237" /></a>
