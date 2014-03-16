@@ -5,6 +5,7 @@ One of the lesser-known, but quite useful, features of LINQ to objects is that e
 <pre>
 // prints 1, 2, 3, 4, 5 as opposed to 5, 4, 3, 2, 1
 new[] { 1, 2, 3, 4, 5 }.Join(new[] { 5, 4, 3, 2, 1 }, i => i, i => i, (i1, i2) => i1).Dump();
+// If you're unfamiliar with the .Dump() extension , this is available when writing snippets of code in the super-handy tool <a href="https://www.linqpad.net/">LinqPad</a>. If you // work regularly with C#, VB, or F# and you don't use LinqPad, <a href="https://www.linqpad.net/">download it</a> and give it a try. It's free!
 </pre>
 
 What does this mean for the various LINQ operators? Here's a quick summary:
@@ -42,7 +43,7 @@ groupJoined.Dump();
 </pre>
 
 <strong>OrderBy</strong>
-OrderBy performs a <a href="http://en.wikipedia.org/wiki/Category:Stable_sorts">stable sort</a> of the underlying sequence, so order is preserved among equal elements. Interestingly, that means that the outcome of sequence.OrderBy(x => x.A).ThenBy(x => x.B) is equivalent to that of sequence.OrderBy(x => x.B).OrderBy(x => x.A).
+OrderBy performs a <a href="http://en.wikipedia.org/wiki/Category:Stable_sorts">stable sort</a> of the underlying sequence, so order is preserved among equal elements. Interestingly, that means that the outcome of sequence.OrderBy(x => x.A).ThenBy(x => x.B) is equivalent to that of sequence.OrderBy(x => x.B).OrderBy(x => x.A) (that said, using ThenBy() is be more efficient since it won't actually perform multiple sorts).
 
 <strong>Distinct</strong>
 Distinct returns maintains relative order by returning the first matching element for each group of equal elements.
@@ -53,11 +54,20 @@ From an ordering perspective, a.Union(b) is equivalent to a.Concat(b).Distinct()
 <strong>Intersect</strong>
 Intersect() simply maintains the ordering of the first sequence, removing all elements that are not in the second sequence.
 
+<strong>SelectMany</strong>
+With SelectMany(), each element in the original sequence is projected into a new sequence. Those sequences are then concatenated together to form the result such that the projected sequences maintain the same order as the elements that created them:
+
+<pre>
+var selectMany = new[] { 1, 2, 3 }.SelectMany(i => new[] { i + "a", i + "b" });
+// gives { 1a, 1b, 2a, 2b, 3a, 3b }
+selectMany.Dump();
+</pre>
+
 <strong>Why is this useful?</strong>
 Order preservation may seem like a minor detail, but knowing about this behavior can simplify certain tasks. For example, if you are removing duplicates from a list created by a user, it is nice to be able to just run .Distinct() without worrying about scrambling the original list.
 
 <strong>A note on collections</strong>
-In addition to LINQ methods, C#'s two primary hash-based collections (HashSet<T> and Dictionary<TKey, TValue> also seem to have undocumented support for order-preservation. For example:
+In addition to LINQ methods, C#'s two primary hash-based collections (HashSet<T> and Dictionary<TKey, TValue>) also seem to have undocumented support for order-preservation. For example:
 
 <pre>
 var random = new Random();
