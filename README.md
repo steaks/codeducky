@@ -1,1 +1,5 @@
-This repository is used to iterate on and store blogs for http://www.codeducky.org/.  If you'd like to join Code Ducky, please email Steven Wexler at steven.m.wexler@gmail.com
+This repository is used to iterate on and store blogs for http://www.codeducky.org/.  Please email Steven Wexler at steven.m.wexler@gmail.com if you'd like to contribute to Code Ducky.
+
+From http://www.codeducky.org/about/:
+
+We created Code Ducky to be a blog where coders can read posts that are interesting and relatable to your coding endeavors. We write about design patterns, development practices, new technologies, useful libraries, and just about anything we think coders will find useful or interesting. We tend to focus on web development, C#, SQL, and Javascript because we are all web developers who primarily work in a .NET technology stack. Of course that doesn’t prevent us from venturing out into other languages and technologies! We hope our posts will provoke interesting thought and help you improve the quality of your code. Please feel encouraged to engage in discussion on Code Ducky! We view our posts as conversation starters, not standalone tutorials. We want to hear your ideas, counterpoints, and feedback!
