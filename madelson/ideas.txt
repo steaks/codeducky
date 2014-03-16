@@ -1,8 +1,6 @@
-so-based post: 
-	- MVC controller testing
-
 Compartmentalization vs. Extensibility
 - problem examples (e. g. analytic engine, stuff keeps leaking in due to business requirements)
+- premature extraction of code -> core becomes a mess
 - general-purpose widgets -> they want something else in the middle
 
 Extensible APIs:
@@ -17,3 +15,11 @@ Build powerful utilities, and then "script" your business code
 	- put your design effort into utilities so that all the common non-business concerns become easy. Domain code can then be underdesigned; it's just a 
 	"script" and is 100% domain-focused
 	- easier to design good utilities in well-established domains
+
+_________________________________
+
+The return of the delegate
+- history of C# delegates
+- named parameters
+- descriptive type name
+- optional, out, and ref parameters

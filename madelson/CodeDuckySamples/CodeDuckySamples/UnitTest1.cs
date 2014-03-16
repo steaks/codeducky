@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using CodeDucky.CustomInvokableBuilder;
 
 namespace CodeDucky
 {
@@ -9,6 +10,7 @@ namespace CodeDucky
         [TestMethod]
         public void TestMethod1()
         {
+            CreateCustomInvokable.Run();
         }
     }
 }

@@ -52,6 +52,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="CollectionHelpers.cs" />
+    <Compile Include="CustomInvokableBuilder\CreateCustomInvokable.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />

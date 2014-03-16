@@ -40,5 +40,15 @@
             var methodCall = (MethodCallExpression)methodExpression.Body;
             return methodCall.Method;
         }
+
+        public static FieldInfo GetField<TField>(Expression<Func<TField>> memberExpression)
+        {
+            return (FieldInfo)GetMember<TField>(memberExpression);
+        }
+
+        public static MemberInfo GetMember<TResult>(Expression<Func<TResult>> memberExpression)
+        {
+            return ((MemberExpression)memberExpression.Body).Member;
+        }
     }
 }

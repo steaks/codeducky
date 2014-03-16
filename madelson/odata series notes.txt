@@ -10,3 +10,5 @@ odata
 - part 4: projection & serialization
 - part 5: linq to odata
 - part 6: service & client pipelines
+
+- part 7: tutorial for the library
