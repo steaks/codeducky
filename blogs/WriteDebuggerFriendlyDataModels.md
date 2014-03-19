@@ -22,6 +22,8 @@ Guidelines:
 	<li><strong>Place meta information in logging tables where valuable</strong></li>
 </ul>
 
+<!--more-->
+
 <strong>Avoid losing history in critical areas of the datamodel</strong>
 If you're like me, you've encountered the following scenario:  problematic record "a" was generated using records "b" and "c."  So you look at records "b" and "c" only to find that they have completely mutated from their state when record "a" was created.  Now you have no way to determine how record "a" was created.  Said in other words, you were not able to definitively determine how record "a" was created because you didn't preserve history for records "b" and "c."
 
