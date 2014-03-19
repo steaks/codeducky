@@ -1,5 +1,3 @@
-LINQ Operators and Ordering
-
 One of the lesser-known, but quite useful, features of LINQ to objects is that each of the operators is in some way order-preserving. For operations like Select(), Where(), and Concat() this is fairly obvious. It is less so for things like Distinct() or Join() which involve hashing under the hood, since that can easily destroy ordering. As a general rule, the LINQ extensions preserve order with respect to the "this" argument of the operator. For example:
 
 <pre>
