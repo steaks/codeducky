@@ -4,8 +4,14 @@ One of the lesser-known, but quite useful, features of LINQ to objects is that e
 
 <pre>
 // prints 1, 2, 3, 4, 5 as opposed to 5, 4, 3, 2, 1
-new[] { 1, 2, 3, 4, 5 }.Join(new[] { 5, 4, 3, 2, 1 }, i => i, i => i, (i1, i2) => i1).Dump();
-// If you're unfamiliar with the .Dump() extension , this is available when writing snippets of code in the super-handy tool <a href="https://www.linqpad.net/">LinqPad</a>. If you // work regularly with C#, VB, or F# and you don't use LinqPad, <a href="https://www.linqpad.net/">download it</a> and give it a try. It's free!
+new[] { 1, 2, 3, 4, 5 }
+    .Join(new[] { 5, 4, 3, 2, 1 }, i => i, i => i, (i1, i2) => i1)
+    .Dump();
+// If you're unfamiliar with the .Dump() extension , this is available 
+// when writing snippets of code in the super-handy tool called LinqPad
+// (https://www.linqpad.net/LinqPad). If you work regularly with C#, VB,
+// or F# and you don't use LinqPad, download it and give it a try. 
+// It's free!
 </pre>
 
 What does this mean for the various LINQ operators? Here's a quick summary:
@@ -32,7 +38,10 @@ This is essentially a combination of GroupBy and Join, and has the expected comb
 <pre>
 var numbers = Enumerable.Range(1, count: 5);
 var groupJoined = numbers.Reverse()
-	.GroupJoin(numbers, i => i % 3, i => i % 3, (outer, inner) => new { outer, inner });
+    .GroupJoin(numbers, 
+               i => i % 3, 
+               i => i % 3, 
+               (outer, inner) => new { outer, inner });
 // gives:
 // { outer = 5, inner =  2: { 2, 5 } }
 // { outer = 4, inner =  1: { 1, 4 } } 
@@ -58,7 +67,8 @@ Intersect() simply maintains the ordering of the first sequence, removing all el
 With SelectMany(), each element in the original sequence is projected into a new sequence. Those sequences are then concatenated together to form the result such that the projected sequences maintain the same order as the elements that created them:
 
 <pre>
-var selectMany = new[] { 1, 2, 3 }.SelectMany(i => new[] { i + "a", i + "b" });
+var selectMany = new[] { 1, 2, 3 }
+    .SelectMany(i => new[] { i + "a", i + "b" });
 // gives { 1a, 1b, 2a, 2b, 3a, 3b }
 selectMany.Dump();
 </pre>
@@ -73,9 +83,11 @@ In addition to LINQ methods, C#'s two primary hash-based collections (HashSet<T>
 var random = new Random();
 var numbers = Enumerable.Range(0, 10000);
 
-// create a crazy custom comparer just in case this is related to a particular
-// GetHashCode() implementation
-// EqualityComparers.Create is defined <a href="http://www.codeducky.org/10-utilities-c-developers-should-know-part-two/">here</a>
+// create a crazy custom comparer just in case this is related to a 
+// particular GetHashCode() implementation.
+// EqualityComparers.Create is defined in:
+// http://www.codeducky.org/10-utilities-c-developers-should-know
+// -part-two/
 var mapping = numbers.ToDictionary(i => i, i => random.Next());
 var comparer = EqualityComparers.Create((int i) => mapping[i]);
 
