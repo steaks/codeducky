@@ -2,6 +2,8 @@ A Stack Overflow <a href="http://stackoverflow.com/questions/21052437/are-these-
 
 With renewed resolve, I searched for developers' opinions about how to choose between properties, fields, and methods. A few articles raised interesting points that I never considered. I particularly enjoyed a MSDN article that covered <a href="http://msdn.microsoft.com/en-us/library/vstudio/ms229054(v=vs.100).aspx">choosing between properties and methods</a> and a post where <a href="http://stackoverflow.com/users/22656/jon-skeet">Jon Skeet</a> explains <a href="http://csharpindepth.com/Articles/Chapter8/PropertiesMatter.aspx">choices between properties and fields</a>. I recommend reading both articles; the MSDN article is particularly relevant to this post.
 
+<!--more-->
+
 <h3>Properties vs. Methods</h3>
 I think the most important thing when deciding between properties and methods is to remember that developers treat properties more like fields than methods when they consume your code. So try to accommodate your consumers' tendency by ensuring your properties act like fields and not like methods.  The three biggest differences between fields and methods in my opinion are:
 <h5>Accessing a field is quick. A method call can be long.</h5>
