@@ -169,6 +169,8 @@ With the lexer in place, we can begin building a parser. I chose to go with a <a
 // expressionList = expression [, expression]*
 </pre>
 
+Now, we can translate each rule in the list into a parse function which calls the previous rule's function recursively. We'll get to the actual implementation of such a function in a moment, but first we have to define some basic utility methods that allow our parser to work with the token stream. The basic methods are Next() (peeks at and returns the next token in the stream) and Eat() which consumes a token from the stream. One common way to write these is to represent the token stream as an immutable linked list. Next just peeks at the head of the list, while Eat() "consumes" the head of the token by returning the tail of the list. In my parser, I actually chose to go with a less-functional approach of maintaining two instance variables: the list of tokens and a counter pointing to the current token. Thus, eat simply advances the counter. 
+
 <strong>Conclusion</strong>
 
 The lexer and parser complete the first step of implementing an OData service endpoint: parsing the OData query string into strongly-typed expressions. Next time, we'll look at how these expressions can be converted to LINQ so that they can actually be used to perform the filtering, sorting, and paging they represent.
