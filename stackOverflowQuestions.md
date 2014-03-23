@@ -1,8 +1,5 @@
 http://stackoverflow.com/questions/19742304/why-should-you-not-use-entity-framework-or-an-orm/19742480#19742480
 	- add blog post and note in answer (e. g. could cover shortcomings of the active record pattern)
-
-http://stackoverflow.com/questions/12682696/removing-duplicates-from-bottom-of-generic-list/12682752#12682752
-	- the fact that all LINQ operators preserve order could be the making of a short post, which we could link to in the beginning of the answer
 	
 http://stackoverflow.com/questions/16741956/entity-framework-5-performance-concerns/18209346#18209346
 	- could reference a post on optimizing EF. In addition to the techniques mentioned in the post, there are:
@@ -99,3 +96,6 @@ http://stackoverflow.com/questions/17961813/immediately-called-functions-are-und
 
 http://stackoverflow.com/questions/16304415/how-can-i-get-the-maximum-sequential-in-number-range/16306128#16306128
    We could write a post about recursive common table expressions.  111 views
+
+DONE: http://stackoverflow.com/questions/12682696/removing-duplicates-from-bottom-of-generic-list/12682752#12682752
+- the fact that all LINQ operators preserve order could be the making of a short post, which we could link to in the beginning of the answer
