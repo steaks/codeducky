@@ -4,7 +4,7 @@ Robust caching in .NET applications
 Caching is an excellent means of improving performance and reducing load on databases and other resources. However, it can be tricky to get right and very painful to debug when gotten wrong. Here are some of the potential pitfalls:
 
 <strong>Key collisions</strong>
-Most caching systems (for example the .NET framework's <a href=http://msdn.microsoft.com/en-us/library/system.runtime.caching(v=vs.110).aspx>System.Runtime.Caching APIs</a> rely on a key which is used for storing and retrieving cache values. However, it is typically up to the developer to generate this key in such a way that distinct values are mapped to distinct keys. If this is done incorrectly (or becomes incorrect due to subsequent code modifications), then we can end up with unnecessary cache misses or, far worse, false hits where the wrong value is returned. Here's an example:
+Most caching systems (for example the .NET framework's <a href=http://msdn.microsoft.com/en-us/library/system.runtime.caching(v=vs.110).aspx>System.Runtime.Caching APIs</a> rely on a key which is used for storing and retrieving cache values. However, it is typically up to the developer to generate this key in such a way that distinct values are mapped to distinct keys. If this is done incorrectly (or becomes incorrect due to subsequent code modifications), then we can end up with unnecessary cache misses or, far worse, false cache hits where the wrong value is returned. Here's an example:
 
 <pre>
 // let's say we write a function to compute our sales for a given product
@@ -46,6 +46,7 @@ In my experience this is a less common mistake than the former issue, but it sti
 <h2>Building a better cache API</h2>
 In an attempt to avoid some of these issues, I've built a "wrapper" API for MemoryCache (or any arbitrary caching system) which helps enforce correct usage. Here's the API:
 
+<strong>The core interface</strong>
 <pre>
 public interface ICache
 {
@@ -76,9 +77,13 @@ Note that there is only 1 method which can be used to access the cache: InvokeCa
 <pre>
 ICache cache = ...
 string path = ...
+// if the cache contains the result of File.ReadAllText(path), return that value. Otherwise, execute File.ReadAllText(path) and cache the result
 var cachedText = cache.InvokeCached(() => File.ReadAllText(path), new CachePolicy(expiresAfter: TimeSpan.FromMinutes(30)));
 </pre>
 
+By forcing consumers to access the cache in this <a href="http://msdn.microsoft.com/en-us/library/ee378677(v=vs.110).aspx">GetOrAdd</a> manner, we've automatically prevented any mistakes around trying to remove items from the cache or relying on their presence. As we implement ICache, we'll see how it helps to address the issues of key collision and thread-safety as well.
+
+<strong>Implementing ICache</strong>
 Essentially, InvokeCached expects to be passed an <a href="http://msdn.microsoft.com/en-us/library/bb335710(v=vs.110).aspx">Expression</a> representing a call to some method. The cache will then use the expression to both (1) build an appropriate cache key for the result and (2) invoke the actual computation if no result can be found for the key. Much of this work is done by a base implementation:
 
 <pre>
@@ -232,7 +237,7 @@ public interface ICacheKey
 }
 </pre>
 
-My builder implementation supports most simple types, Type, collections, and custom types (via ICacheKey). It also wraps each item in curly braces to help avoid collisions. That said, it's far from perfect. For example, it won't distinguish between an empty string and an empty enumerable. How complex you want to make the builder depends on your level of paranoia; even with this simple implementation, the chance of erroneous collision should be far lower than requiring each developer who uses caching to come up with their own key-generation scheme.
+My builder implementation supports most simple types, Type, collections, and custom types (via ICacheKey). It also wraps each item in curly braces to help avoid collisions. That said, it's far from perfect. For example, it won't distinguish between an empty string and an empty enumerable. How complex you want to make the builder depends on your level of paranoia; even with this simple implementation, the chance of erroneous collision should be far lower than requiring each developer who uses caching to come up with their own key-generation scheme. One final concern is methods which access global variables, such as HttpContext.Current, since that source of input to the calculation won't be represented either by the "this" instance or by the arguments. This is easy to work around if you're aware of it (and will likely make your code cleaner in the process), but is worth watching out for.
 
 The final helper is ThrowIfNotCacheable. This attempts to handle the thread-safety issue mentioned above by doing a check on each cached object. Here's a sample implementation:
 
@@ -294,9 +299,11 @@ public sealed class Cache : CacheBase
 Now, let's circle back to our compute sales example to see how this works end to end. Here's how we might write ComputeSales to take advantage of an ICache:
 
 <pre>
-class SalesCalculator : ICacheKey
+class SalesCalculator : ICacheKey // we need this because the "this" parameter of ComputeSales is part of the key
 {
-	private readonly ICache cache;
+	private readonly ICache cache;	
+	// let's assume that we'll use this connection to query the database when computing sales
+	private readonly IDbConnection connection;
 
 	...
 	
@@ -306,7 +313,7 @@ class SalesCalculator : ICacheKey
 		{
 			// with this pattern, we pass false for checkCache here to so that if the cache 
 			// decides to invoke this method, we'll skip this branch
-			return this.cache.InvokeCached(() => this.ComputeSales(productId, minDate, maxDate, false), new CachePolicy { ... });
+			return this.cache.InvokeCached(() => this.ComputeSales(productId, minDate, maxDate, false), new CachePolicy(...));
 		}
 		
 		// actually compute sales here
@@ -314,7 +321,7 @@ class SalesCalculator : ICacheKey
 		return sales;
 	}
 	
-	void ICacheKey.BuildCacheKey(CacheKeyBuilder builder) { builder.By(this.GetType()); }
+	void ICacheKey.BuildCacheKey(CacheKeyBuilder builder) { builder.By(this.GetType()).By(this.connection.ConnectionString); }
 }
 </pre>
 
@@ -348,3 +355,6 @@ Now, let's imagine that the application calls salesCalculator.ComputeSales(100, 
 5. Verify that the result is safe to cache. Double is IConvertible, so we're good
 6. Call Add, which calls MemoryCache.Add() with the value and computed key
 7. Return the value
+
+<h2>Conclusion</h2>
+Caching will always be difficult, but using Expressions we can at least build an interface that is easy to use and dodges several of the pitfalls present in common caching APIs such as System.Runtime.Caching. Hopefully, this helps lead to faster, yet still bug-free, code! Finally, if you're interested in using this API in your code, check out the <a href="https://gist.github.com/madelson/9732042">source code on GitHub</a>. There, I've also included an async InvokeCached API, which allows you to cache the results of C# 5 async methods without breaking out of the async flow. 

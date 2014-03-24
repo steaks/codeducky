@@ -9,6 +9,8 @@ using System.Runtime.Caching;
 using System.Text;
 using System.Threading.Tasks;
 
+// Note: this sample references some utility functions from http://www.codeducky.org/10-utilities-c-developers-should-know-part-one/
+
 namespace CodeDucky
 {
     #region ---- Core interfaces ----
