@@ -41,4 +41,4 @@ Here is our use of "apply" and our partially applied function "corWithA" that sh
 <pre>correlations = apply(data[,-1], 2, corWithA)</pre>
 We can EVEN make it one-liner if we pass corWithA in as an anonymous function
 <pre>correlations = apply(data[,-1], 2, function(variable) { return cor(variable, data$a) })</pre>
-And that my friends is the power of partially applied functions. We took what was 5 lines of messy code that used a for loop and shortened it down for a 1 liner.
+And that my friends is the power of partially applied functions. We took what was 5 lines of messy code that used a for loop and shortened it down to a 1 liner.
