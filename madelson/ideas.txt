@@ -23,3 +23,14 @@ The return of the delegate
 - named parameters
 - descriptive type name
 - optional, out, and ref parameters
+
+__________________________________________
+
+unit testing for MVC controllers
+* the controller should be part of the routing engine => it should not have business logic
+* controller is really MVC's abstraction for an entry point. Testing it without the web stack is like testing Linq to entities with linq to objects; it's simply not the same!
+* too much to mock => model state, url helper, request. Even if you get a test running it can easily become fragile
+* many controller errors are model-binding errors, serialization errors, or errors in the interaction between the controller and views; and many tests don't catch these
+* unit test through selenium or phantom JS
+	- end-to-end tests catch more real bugs because they test the controller in the context that it's actually used
+* test your IOC wiring
