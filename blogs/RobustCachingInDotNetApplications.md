@@ -1,7 +1,7 @@
 Robust caching in .NET applications
 
 <h2>Caching is hard</h2>
-Caching is an excellent means of improving performance and reducing load on databases and other resources. However, it can be tricky to get right and very painful to debug when gotten wrong. Here are some of the potential pitfalls:
+Caching is an excellent means of improving performance and reducing load on databases and other resources. However, it can be tricky to get right and very painful to debug when gotten wrong. In this post, I'll discus both some of the challenges involved with implementing caching and a C# cache implementation that takes steps to address many of them. Let's start with some of the most common pitfalls:
 
 <strong>Key collisions</strong>
 Most caching systems (for example the .NET framework's <a href=http://msdn.microsoft.com/en-us/library/system.runtime.caching(v=vs.110).aspx>System.Runtime.Caching APIs</a> rely on a key which is used for storing and retrieving cache values. However, it is typically up to the developer to generate this key in such a way that distinct values are mapped to distinct keys. If this is done incorrectly (or becomes incorrect due to subsequent code modifications), then we can end up with unnecessary cache misses or, far worse, false cache hits where the wrong value is returned. Here's an example:
@@ -30,17 +30,23 @@ double ComputeSales(int productId)
 // in the future, we update the API to:
 double ComputeSales(int productId, DateTime? minDate = null, DateTime? maxDate = null)
 {
-    // if we forget to update the cache key creating appropriately, we introduce a transient bug where the wrong value is sometimes returned!
+    // let's say we forgot to update the cache key to include the new parameters
 }
+
+// now if someone calls:
+var salesForAllTime = ComputeSales(100);
+// this will incorrectly return the value we cached when computing salesForAllTime,
+// since we didn't factor the dates into the cache key!
+var salesForThisMonth = ComputeSales(100, DateTime.Now.AddMonths(-1), DateTime.Now);
 </pre>
 
 <strong>Thread-safety</strong>
 When caching objects in memory as with MemoryCache, it is vitally important that the cached values be thread-safe. Typically this means that cached objects should be immutable. This is a frequent issue when caching database results, since the entity objects in ORM frameworks like Entity Framework tend to be mutable and may even maintain references to an non-thread-safe database connection (e. g. EF does this to support lazy-loading of navigation properties).
 
 <strong>Relying on cache removal</strong>
-.NET's MemoryCache is not alone in offering an API for removing items from the cache. While this may seem useful, I consider it to be a trap, particularly in the case of web development. Developers who use this API can easily build systems which <i>rely</i> on this behavior for correctness. For example, consider a system which stores a user's preferences in a database. When the preferences are required, we read them from the database and then cache them in a MemoryCache. When the user updates her preferences, we update the database records and either clear or overwrite the old cache entry. This implementation may sound reasonable, and will likely work in most development/testing environments. However, if this gets deployed to a production environment where we have multiple servers running instances of the same application. In this environment, our cache clearing operation will only affect one server; if the next request goes to a different server, we'll serve up out-of-date preferences from the cache.
+As <a href="http://martinfowler.com/bliki/TwoHardThings.html">Phil Karlton says</a>, cache invalidation is one of the hardest things in computer science. .NET's MemoryCache is not alone in offering an API for removing items from the cache. While this may seem useful, I consider it to be a trap, particularly in the case of web development. Developers who use this API can easily build systems which <i>rely</i> on this behavior for correctness. For example, consider a system which stores a user's preferences in a database. When the preferences are required, we read them from the database and then cache them in a MemoryCache. When the user updates her preferences, we update the database records and either clear or overwrite the old cache entry. This implementation may sound reasonable, and will likely work in most development/testing environments. However, what happens when this gets deployed to a production environment where we have multiple servers running instances of the same application? In this environment, our cache clearing operation will only affect one server; if the next request goes to a different server, we'll serve up out-of-date preferences from the cache.
 
-<strong>Relying on the existance of items in the cache</strong>
+<strong>Relying on the existence of items in the cache</strong>
 In my experience this is a less common mistake than the former issue, but it still comes up occasionally. Cache APIs that contain a Get(key) operation can be traps because they don't require developers to handle the cache miss case. Using this type of API, it is possible to write code which almost always works but exhibits occasional transient failures.
 
 <h2>Building a better cache API</h2>
@@ -81,7 +87,7 @@ string path = ...
 var cachedText = cache.InvokeCached(() => File.ReadAllText(path), new CachePolicy(expiresAfter: TimeSpan.FromMinutes(30)));
 </pre>
 
-By forcing consumers to access the cache in this <a href="http://msdn.microsoft.com/en-us/library/ee378677(v=vs.110).aspx">GetOrAdd</a> manner, we've automatically prevented any mistakes around trying to remove items from the cache or relying on their presence. As we implement ICache, we'll see how it helps to address the issues of key collision and thread-safety as well.
+By forcing consumers to access the cache in this <a href="http://www.codeducky.org/10-utilities-c-developers-should-know-part-two/">GetOrAdd</a> manner, we've automatically prevented any mistakes around trying to remove items from the cache or relying on their presence. While this may seem somewhat restrictive, in most if not all use cases the need for cache invalidation can be worked around via smart key construction, well-thought-out caching policies, and/or <a href="http://www.codeducky.org/debugger-friendly-data-models/">increased use of immutability</a>. As we implement ICache, we'll see how it helps to address the issues of key collision and thread-safety as well.
 
 <strong>Implementing ICache</strong>
 Essentially, InvokeCached expects to be passed an <a href="http://msdn.microsoft.com/en-us/library/bb335710(v=vs.110).aspx">Expression</a> representing a call to some method. The cache will then use the expression to both (1) build an appropriate cache key for the result and (2) invoke the actual computation if no result can be found for the key. Much of this work is done by a base implementation:
@@ -202,16 +208,16 @@ public sealed class CacheKeyBuilder
 		{
 			this.builder.Append(typeValue.GUID);
 		}
+		else if ((cacheKeyValue = value as ICacheKey) != null)
+		{
+			cacheKeyValue.BuildCacheKey(this);
+		}
 		else if ((enumerableValue = value as IEnumerable) != null)
 		{
 			foreach (object element in enumerableValue)
 			{
 				this.By(element);
 			}
-		}
-		else if ((cacheKeyValue = value as ICacheKey) != null)
-		{
-			cacheKeyValue.BuildCacheKey(this);
 		}
 		else
 		{
