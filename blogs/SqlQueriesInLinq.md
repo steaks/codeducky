@@ -9,12 +9,13 @@
 }
 </style>
 
-Translating SQL to LINQ can prove difficult for new and experienced C# developers.  This post contains common SQL queries written in LINQ.  I hope it'll serve as a reference when writing LINQ queries.  I'll use a MS SQL database and <a href="http://msdn.microsoft.com/en-us/data/ee712907">Entity Framework</a> for my examples.  However, most examples can be extracted to other ORMs and databases.
+Translating SQL to LINQ can prove difficult for new and experienced C# developers.  This post contains common SQL queries written in LINQ.  I hope it'll serve as a reference when writing LINQ queries.  I'll use a MS SQL database and <a href="http://msdn.microsoft.com/en-us/data/ee712907">Entity Framework</a> for my examples.  However, these examples can be extracted to other ORMs and databases.  Also, consider reading <a href="https://www.linqpad.net/WhyLINQBeatsSQL.aspx">why linq beats SQL</a> to learn how to think in LINQ terms rather than translating SQL to LINQ.
 
 <a href="#select">Select</a>
 <a href="#where">Where</a>
 <a href="#inner-join">Inner join</a>
 <a href="#left-right-outer-join">Left/right outer join</a>
+<a href="#full-outer-join">Full outer join</a>
 <a href="#cross-join">Cross join</a>
 <a href="#group-by">Group by</a>
 <a href="#having">Having</a>
@@ -387,6 +388,41 @@ var authorsAndTheirBooks3 =
     join b in db.Books
         on a.AuthorId equals b.AuthorId into g
     select g.DefaultIfEmpty();
+</pre>
+
+<h5 class="section-header"><a name="full-outer-join">Full outer join</a></h5>
+<p class="section-header-footnote"><i>See the <a href="#data-model">data model</a> and <a href="#entity-framework-data-context">Entity Framework data context</a> to understand the setup for the following examples.</i></p>
+
+<pre>
+SELECT b.title, a.name
+FROM books b
+FULL OUTER JOIN authors a
+    ON b.authorId = a.authorId
+
+var leftOuterJoin =
+    from a in db.Authors
+    join b in db.Books
+        on a.AuthorId equals b.AuthorId into g
+    from left in g.DefaultIfEmpty()
+    select new 
+    {
+        Title = left.Title,
+        Name = a.Name
+    };
+
+var rightOuterJoin =
+    from b in db.Books
+    join a in db.Authors
+        on b.AuthorId equals a.AuthorId into g
+    from right in g.DefaultIfEmpty()
+    select new
+    {
+        Title = b.Title,
+        Name = right.Name
+    };
+
+
+var fullOuterJoin = leftOuterJoin.Concat(rightOuterJoin);
 </pre>
 
 <h5 class="section-header"><a name="cross-join">Cross join</a></h5>
