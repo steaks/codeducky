@@ -9,7 +9,9 @@
 }
 </style>
 
-Translating SQL to LINQ can prove difficult for new and experienced C# developers.  This post contains common SQL queries written in LINQ.  I hope it'll serve as a reference when writing LINQ queries.  I'll use a MS SQL database and <a href="http://msdn.microsoft.com/en-us/data/ee712907">Entity Framework</a> for my examples.  However, these examples can be extracted to other ORMs and databases.  Also, consider reading <a href="https://www.linqpad.net/WhyLINQBeatsSQL.aspx">why linq beats SQL</a> to learn how to think in LINQ terms rather than translating SQL to LINQ.
+Translating SQL to LINQ can prove difficult for new and experienced C# developers.  This post contains common SQL queries written in LINQ.  I hope it'll serve as a reference when writing LINQ queries.  I'll use a MS SQL database and <a href="http://msdn.microsoft.com/en-us/data/ee712907">Entity Framework</a> for my examples.  However, these examples can be extracted to other ORMs and databases.  Also, consider reading <a href="https://www.linqpad.net/WhyLINQBeatsSQL.aspx">why LINQ beats SQL</a> to learn how to think in LINQ terms rather than translating SQL to LINQ.
+
+<!--more-->
 
 <a href="#select">Select</a>
 <a href="#where">Where</a>
