@@ -41,6 +41,16 @@
             return methodCall.Method;
         }
 
+        /// <summary>
+        /// Returns the method referenced by the given expression
+        /// </summary>
+        public static MethodInfo GetMethod(Expression<Action> methodExpression)
+        {
+            Throw.IfNull(methodExpression, "methodExpression");
+            var methodCall = (MethodCallExpression)methodExpression.Body;
+            return methodCall.Method;
+        }
+
         public static FieldInfo GetField<TField>(Expression<Func<TField>> memberExpression)
         {
             return (FieldInfo)GetMember<TField>(memberExpression);
