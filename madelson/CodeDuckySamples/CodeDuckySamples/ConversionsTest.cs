@@ -24,6 +24,9 @@ namespace CodeDucky
             this.RunTests((from, to) => from.IsCastableTo(to), @implicit: false);
         }
 
+        /// <summary>
+        /// Validates the given implementation function for either implicit or explicit conversion
+        /// </summary>
         private void RunTests(Func<Type, Type, bool> func, bool @implicit)
         {
             // gather types
@@ -34,33 +37,39 @@ namespace CodeDucky
             var typesToConsider = primitives.Concat(simpleTypes).Concat(variantTypes).Concat(conversionOperators).ToArray();
             var allTypesToConsider = typesToConsider.Concat(typesToConsider.Where(t => t.IsValueType).Select(t => typeof(Nullable<>).MakeGenericType(t)));
 
+            // generate test cases
             var cases = this.GenerateTestCases(allTypesToConsider, @implicit);
+
+            // collect errors
             var mistakes = new List<string>();
             foreach (var @case in cases)
             {
                 var result = func(@case.Item1, @case.Item2);
                 if (result != (@case.Item3 == null))
                 {
-                   func(@case.Item1, @case.Item2);
+                   // func(@case.Item1, @case.Item2); // break here for easy debugging
                     mistakes.Add(string.Format("{0} => {1}: got {2} for {3} cast", @case.Item1, @case.Item2, result, @implicit ? "implicit" : "explicit"));
                 }
             }
             Assert.IsTrue(mistakes.Count == 0, string.Join(Environment.NewLine, new[] { mistakes.Count + " errors" }.Concat(mistakes)));
         }
 
-        private IEnumerable<Tuple<Type, Type, CompilerError>> GenerateTestCases(IEnumerable<Type> types, bool @implicit)
+        private List<Tuple<Type, Type, CompilerError>> GenerateTestCases(IEnumerable<Type> types, bool @implicit)
         {
+            // gather all pairs
             var typeCrossProduct = types.SelectMany(t => types, (from, to) => new { from, to })
                 .Select((t, index) => new { t.from, t.to, index })
                 .ToArray();
 
+            // create the code to pass to the compiler
             var code = string.Join(
                 Environment.NewLine,
-                new[] { "namespace A { public class B { public void C() {" }
+                new[] { "namespace A { public class B { static T Get<T>() { return default(T); } public void C() {" }
                 .Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}default({3});", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
                     .Concat(new[] { "}}}" })
             );                
 
+            // compile the code
             var provider = new CSharpCodeProvider();
             var compilerParams = new CompilerParameters();
             compilerParams.ReferencedAssemblies.Add(this.GetType().Assembly.Location); // reference the current assembly!
@@ -68,6 +77,7 @@ namespace CodeDucky
             compilerParams.GenerateInMemory = true;
             var compilationResult = provider.CompileAssemblyFromSource(compilerParams, code);
 
+            // determine the outcome of each conversion by matching compiler errors with conversions by line #
             var cases = typeCrossProduct.GroupJoin(
                     compilationResult.Errors.Cast<CompilerError>(),
                     t => t.index,
@@ -76,12 +86,16 @@ namespace CodeDucky
                 )
                 .ToList();
 
+            // add a special case
             // this can't be verified by the normal means, since it's a private class
             cases.Add(Tuple.Create(typeof(PrivateOperators), typeof(int), default(CompilerError)));
 
             return cases;
         }
 
+        /// <summary>
+        /// Gets a C# name for the given type
+        /// </summary>
         private static string GetName(Type type)
         {
             if (!type.IsGenericType)
@@ -165,6 +179,11 @@ namespace CodeDucky
         public static implicit operator Operators2(DerivedOperators o)
         {
             return null;
+        }
+
+        public static explicit operator Operators2(int i)
+        {
+            throw new NotImplementedException();
         }
     }
 }

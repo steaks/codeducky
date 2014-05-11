@@ -22,6 +22,7 @@ namespace CodeDucky
     {
         public static bool IsCastableTo(this Type from, Type to)
         {
+            // from http://www.codeducky.org/10-utilities-c-developers-should-know-part-one/ 
             Throw.IfNull(from, "from");
             Throw.IfNull(to, "to");
 
@@ -63,6 +64,7 @@ namespace CodeDucky
                 {
                     result = !(
                         ex.InnerException is RuntimeBinderException
+                        // if the code runs in an environment where this message is localized, we could attempt a known failure first and base the regex on it's message
                         && Regex.IsMatch(ex.InnerException.Message, @"^Cannot convert type '.*' to '.*'$")
                     );
                 }
@@ -115,18 +117,25 @@ namespace CodeDucky
                 }
             }
 
-            // look for explicit conversions
+            // look for conversion operators. Even though we already checked for implicit conversions, we have to look
+            // for operators of both types because, for example, if a class defines an implicit conversion to int then it can be explicitly
+            // cast to uint
             const BindingFlags conversionFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy;
             var conversionMethods = from.GetMethods(conversionFlags).Concat(to.GetMethods(conversionFlags))
                 .Where(m => (m.Name == "op_Explicit" || m.Name == "op_Implicit")
                     && m.Attributes.HasFlag(MethodAttributes.SpecialName)
                     && m.GetParameters().Length == 1 
                     && (
+                        // the from argument of the conversion function can be an indirect match to from in
+                        // either direction. For example, if we have A : B and Foo defines a conversion from B => Foo,
+                        // then C# allows A to be cast to Foo
                         m.GetParameters()[0].ParameterType.IsAssignableFrom(from)
                         || from.IsAssignableFrom(m.GetParameters()[0].ParameterType)
                     )
                 );
 
+            // as mentioned above, primitive convertible types (e. g. not IntPtr) get special treatment in the
+            // sense that if you can convert from Foo => int, you can convert from Foo => double as well
             if (to.IsPrimitive && typeof(IConvertible).IsAssignableFrom(to))
             {
                 return conversionMethods.Any(m => m.ReturnType.IsCastableTo(to));
@@ -144,6 +153,7 @@ namespace CodeDucky
 
         public static bool IsImplicitlyCastableTo(this Type from, Type to)
         {
+            // from http://www.codeducky.org/10-utilities-c-developers-should-know-part-one/ 
             Throw.IfNull(from, "from");
             Throw.IfNull(to, "to");
 
@@ -175,6 +185,7 @@ namespace CodeDucky
             {
                 result = !(
                     ex.InnerException is RuntimeBinderException
+                    // if the code runs in an environment where this message is localized, we could attempt a known failure first and base the regex on it's message
                     && Regex.IsMatch(ex.InnerException.Message, @"^The best overloaded method match for 'System.Collections.Generic.List<.*>.Add(.*)' has some invalid arguments$")
                 );
             }
@@ -186,10 +197,12 @@ namespace CodeDucky
         private static void AttemptImplicitCast<TFrom, TTo>()
         {
             // based on the IL produced by:
-            // dynamic list = new List<StringSplitOptions>();
-            // list.Add(default(decimal));
+            // dynamic list = new List<TTo>();
+            // list.Add(default(TFrom));
+            // We can't use the above code because it will mimic a cast in a generic method
+            // which doesn't have the same semantics as a cast in a non-generic method
 
-            var list = new List<TTo>();
+            var list = new List<TTo>(capacity: 1);
             var binder = Microsoft.CSharp.RuntimeBinder.Binder.InvokeMember(
                 flags: CSharpBinderFlags.ResultDiscarded, 
                 name: "Add", 
@@ -212,7 +225,7 @@ namespace CodeDucky
 
         private class ImplicitCastHelper<TTo>
         {
-            public void Noop(TTo value) { }
+            public void NoOp(TTo value) { }
         }
 
         #region ---- Caching ----
