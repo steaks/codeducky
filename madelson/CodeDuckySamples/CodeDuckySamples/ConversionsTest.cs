@@ -30,7 +30,7 @@ namespace CodeDucky
             var primitives = typeof(object).Assembly.GetTypes().Where(t => t.IsPrimitive).ToArray();
             var simpleTypes = new[] { typeof(string), typeof(DateTime), typeof(decimal), typeof(object), typeof(DateTimeOffset), typeof(TimeSpan), typeof(StringSplitOptions), typeof(DateTimeKind) };
             var variantTypes = new[] { typeof(string[]), typeof(object[]), typeof(IEnumerable<string>), typeof(IEnumerable<object>), typeof(Func<string>), typeof(Func<object>), typeof(Action<string>), typeof(Action<object>) };
-            var conversionOperators = new[] { typeof(Operators), typeof(OperatorsStruct) };
+            var conversionOperators = new[] { typeof(Operators), typeof(Operators2), typeof(DerivedOperators), typeof(OperatorsStruct) };
             var typesToConsider = primitives.Concat(simpleTypes).Concat(variantTypes).Concat(conversionOperators).ToArray();
             var allTypesToConsider = typesToConsider.Concat(typesToConsider.Where(t => t.IsValueType).Select(t => typeof(Nullable<>).MakeGenericType(t)));
 
@@ -41,7 +41,7 @@ namespace CodeDucky
                 var result = func(@case.Item1, @case.Item2);
                 if (result != (@case.Item3 == null))
                 {
-                    func(@case.Item1, @case.Item2);
+                   func(@case.Item1, @case.Item2);
                     mistakes.Add(string.Format("{0} => {1}: got {2} for {3} cast", @case.Item1, @case.Item2, result, @implicit ? "implicit" : "explicit"));
                 }
             }
@@ -74,7 +74,11 @@ namespace CodeDucky
                     e => e.Line - 2,
                     (t, e) => Tuple.Create(t.from, t.to, e.FirstOrDefault())
                 )
-                .ToArray();
+                .ToList();
+
+            // this can't be verified by the normal means, since it's a private class
+            cases.Add(Tuple.Create(typeof(PrivateOperators), typeof(int), default(CompilerError)));
+
             return cases;
         }
 
@@ -86,6 +90,14 @@ namespace CodeDucky
             }
 
             return string.Format("{0}.{1}<{2}>", type.Namespace, type.Name.Substring(0, type.Name.IndexOf('`')), string.Join(", ", type.GetGenericArguments().Select(GetName)));
+        }
+
+        private class PrivateOperators
+        {
+            public static implicit operator int(PrivateOperators o)
+            {
+                return 1;
+            }
         }
     }
 
@@ -112,6 +124,14 @@ namespace CodeDucky
         }
     }
 
+    public class DerivedOperators : Operators 
+    {
+        public static explicit operator DateTime(DerivedOperators o)
+        {
+            return DateTime.Now;
+        }
+    }
+
     public struct OperatorsStruct
     {
         public static implicit operator string(OperatorsStruct o)
@@ -132,6 +152,19 @@ namespace CodeDucky
         public static explicit operator StringSplitOptions(OperatorsStruct o)
         {
             return StringSplitOptions.RemoveEmptyEntries;
+        }
+    }
+
+    public class Operators2
+    {
+        public static explicit operator bool(Operators2 o)
+        {
+            return false;
+        }
+
+        public static implicit operator Operators2(DerivedOperators o)
+        {
+            return null;
         }
     }
 }
