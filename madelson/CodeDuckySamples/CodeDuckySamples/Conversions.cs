@@ -1,25 +1,26 @@
-﻿using Microsoft.CSharp.RuntimeBinder;
-using System;
-using System.Collections;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using CSharpBinder = Microsoft.CSharp.RuntimeBinder.Binder;
-
-// http://stackoverflow.com/questions/292437/determine-if-a-reflected-type-can-be-cast-to-another-reflected-type
+﻿// http://stackoverflow.com/questions/292437/determine-if-a-reflected-type-can-be-cast-to-another-reflected-type
 // http://stackoverflow.com/questions/2224266/how-to-tell-if-type-a-is-implicitly-convertible-to-type-b/2224421#2224421
 // http://stackoverflow.com/questions/7042314/can-i-check-if-a-variable-can-be-cast-to-a-specified-type
 
 namespace CodeDucky
 {
+    using Microsoft.CSharp.RuntimeBinder;
+    using System;
+    using System.Collections;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Linq.Expressions;
+    using System.Reflection;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Threading.Tasks;
+    using CSharpBinder = Microsoft.CSharp.RuntimeBinder.Binder;
+
     public static class TypeHelpers
     {
+        #region ---- Explicit casts ----
         public static bool IsCastableTo(this Type from, Type to)
         {
             // from http://www.codeducky.org/10-utilities-c-developers-should-know-part-one/ 
@@ -37,7 +38,7 @@ namespace CodeDucky
             bool cachedValue;
             if (CastCache.TryGetCachedValue(key, out cachedValue))
             {
-                //return cachedValue;
+                return cachedValue;
             }
 
             // for nullable types, we can simply strip off the nullability and evaluate the underyling types
@@ -71,9 +72,11 @@ namespace CodeDucky
             }
             else
             {
-                // if the from type is null, the dynamic logic below won't be of any help because either both types are nullable and thus
-                // a runtime cast of null => null will succeed OR we get a runtime failure related to the inability to cast null to the desired
-                // type, which may or may not indicate an actual issue. thus, we do the work manually
+                // if the from type is null, the dynamic logic above won't be of any help because 
+                // either both types are nullable and thus a runtime cast of null => null will 
+                // succeed OR we get a runtime failure related to the inability to cast null to 
+                // the desired type, which may or may not indicate an actual issue. thus, we do 
+                // the work manually
                 result = from.IsNonValueTypeExplicitlyCastableTo(to);
             }
             
@@ -83,12 +86,6 @@ namespace CodeDucky
 
         private static bool IsNonValueTypeExplicitlyCastableTo(this Type from, Type to)
         {
-            if (to.IsAssignableFrom(from))
-            {
-                // if to : from, then a cast might succeed so it's allowed
-                return true;
-            }
-
             if ((to.IsInterface && !from.IsSealed)
                 || (from.IsInterface && !to.IsSealed))
             {
@@ -98,8 +95,10 @@ namespace CodeDucky
                 return true;
             }
 
-            // arrays are complex because of array covariance (see http://msmvps.com/blogs/jon_skeet/archive/2013/06/22/array-covariance-not-just-ugly-but-slow-too.aspx).
-            // Thus, we have to allow for var x = (IEnumerable<string>)new object[0]; and var x = (object[])default(IEnumerable<string>);
+            // arrays are complex because of array covariance 
+            // (see http://msmvps.com/blogs/jon_skeet/archive/2013/06/22/array-covariance-not-just-ugly-but-slow-too.aspx).
+            // Thus, we have to allow for things like var x = (IEnumerable<string>)new object[0];
+            // and var x = (object[])default(IEnumerable<string>);
             var arrayType = from.IsArray && !from.GetElementType().IsValueType ? from
                 : to.IsArray && !to.GetElementType().IsValueType ? to
                 : null;
@@ -121,7 +120,8 @@ namespace CodeDucky
             // for operators of both types because, for example, if a class defines an implicit conversion to int then it can be explicitly
             // cast to uint
             const BindingFlags conversionFlags = BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy;
-            var conversionMethods = from.GetMethods(conversionFlags).Concat(to.GetMethods(conversionFlags))
+            var conversionMethods = from.GetMethods(conversionFlags)
+                .Concat(to.GetMethods(conversionFlags))
                 .Where(m => (m.Name == "op_Explicit" || m.Name == "op_Implicit")
                     && m.Attributes.HasFlag(MethodAttributes.SpecialName)
                     && m.GetParameters().Length == 1 
@@ -134,10 +134,11 @@ namespace CodeDucky
                     )
                 );
 
-            // as mentioned above, primitive convertible types (e. g. not IntPtr) get special treatment in the
-            // sense that if you can convert from Foo => int, you can convert from Foo => double as well
             if (to.IsPrimitive && typeof(IConvertible).IsAssignableFrom(to))
             {
+                // as mentioned above, primitive convertible types (i. e. not IntPtr) get special 
+                // treatment in the sense that if you can convert from Foo => int, you can convert
+                // from Foo => double as well
                 return conversionMethods.Any(m => m.ReturnType.IsCastableTo(to));
             }
 
@@ -146,11 +147,16 @@ namespace CodeDucky
 
         private static void AttemptExplicitCast<TFrom, TTo>()
         {
+            // based on the IL generated from
+            // var x = (TTo)(dynamic)default(TFrom);
+
             var binder = CSharpBinder.Convert(CSharpBinderFlags.ConvertExplicit, typeof(TTo), typeof(TypeHelpers));
             var callSite = CallSite<Func<CallSite, TFrom, TTo>>.Create(binder);
             callSite.Target(callSite, default(TFrom));
         }
+        #endregion
 
+        #region ---- Implicit casts ----
         public static bool IsImplicitlyCastableTo(this Type from, Type to)
         {
             // from http://www.codeducky.org/10-utilities-c-developers-should-know-part-one/ 
@@ -203,7 +209,7 @@ namespace CodeDucky
             // which doesn't have the same semantics as a cast in a non-generic method
 
             var list = new List<TTo>(capacity: 1);
-            var binder = Microsoft.CSharp.RuntimeBinder.Binder.InvokeMember(
+            var binder = CSharpBinder.InvokeMember(
                 flags: CSharpBinderFlags.ResultDiscarded, 
                 name: "Add", 
                 typeArguments: null, 
@@ -222,11 +228,7 @@ namespace CodeDucky
             var callSite = CallSite<Action<CallSite, object, TFrom>>.Create(binder);
             callSite.Target.Invoke(callSite, list, default(TFrom));
         }
-
-        private class ImplicitCastHelper<TTo>
-        {
-            public void NoOp(TTo value) { }
-        }
+        #endregion
 
         #region ---- Caching ----
         private const int MaxCacheSize = 5000;
