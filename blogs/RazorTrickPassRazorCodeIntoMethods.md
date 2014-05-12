@@ -1,9 +1,10 @@
 One lesser known features about Razor is that you can pass razor code into C# methods.  This functionality is a useful tool when consolidating code.
 
+<!--more-->
 It's useful when you want to store html content as a variable.
 <pre>
 @{
-    var barSpan = Html.Content(@<span class="foo">@ViewBag.Bar</span>);
+    IHtmlString barSpan = Html.Content(@<span class="foo">@ViewBag.Bar</span>);
 }
 <span>Bar 1: @barSpan</span>
 <span>Bar 2: @barSpan</span>
@@ -18,7 +19,7 @@ public static IHtmlString Content(
 }
 </pre>
 
-It's also useful when you want to implement common components.  (See <a href="http://www.codeducky.org/razor-trick-using-block/">Razor trick: using block</a> to learn how to implement common components with using blocks.)
+It's also useful when you want to implement custom HTML helpers.  See <a href="http://www.codeducky.org/razor-trick-using-block/">Razor trick: using block</a> to learn how to custom HTML helpers with using blocks.
 
 For example, you can leverage C# methods to centralize code for comment blocks that require special markup and css styling.
 
@@ -26,11 +27,11 @@ Without C# methods:
 <pre>
 <div class="comment-block">
     <div class="comment-block-header"> 
-        <a href="http://www.codeducky.org">Link header</a>
+        <a href="@ViewBag.CodeDuckyUrl">Link header</a>
     </div>
     <textarea>Write comment here!</textarea>
     <div class="comment-block-footer"> 
-        <a href="http://www.codeducky.org">Link footer</a>
+        <a href="@ViewBag.CodeDuckyUrl">Link footer</a>
     </div>
 </div>
 
@@ -48,8 +49,8 @@ Without C# methods:
 Centralized code with C# methods:
 <pre>
 @Html.CommentBlock(
-    header: @<a href="http://www.codeducky.org">Link header</a>,
-    footer: @<a href="http://www.codeducky.org">Link footer</a>
+    header: @<a href="@ViewBag.CodeDuckyUrl">Link header</a>,
+    footer: @<a href="@ViewBag.CodeDuckyUrl">Link footer</a>
 )
 
 @Html.CommentBlock(
