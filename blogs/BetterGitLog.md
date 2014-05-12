@@ -11,8 +11,8 @@ pre.prettyprint {
 </style>
 
 Git comes with a log command out of the box.  Fortunately, it's very flexible.  Unfortunately, the default display isn't very convenient.  Many of my colleagues and I use a <a href="http://stackoverflow.com/questions/2553786/how-do-i-alias-commands-in-git">git alias</a> view more readable logs.
+
 <!--more-->
-<br/>
 <pre>
 [alias]
     lg = log --pretty=format:'%Cred%h%Creset%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
@@ -44,6 +44,5 @@ git lg -10 --graph
 </pre>
 <br/>
 <a href="http://www.codeducky.org/wp-content/uploads/2014/05/graph.png"><img src="http://www.codeducky.org/wp-content/uploads/2014/05/graph.png" alt="graph" width="1107" height="310" class="aligncenter size-full wp-image-418" /></a>
-
 
 
