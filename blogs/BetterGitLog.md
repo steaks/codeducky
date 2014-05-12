@@ -11,6 +11,7 @@ pre.prettyprint {
 </style>
 
 Git comes with a log command out of the box.  Fortunately, it's very flexible.  Unfortunately, the default display isn't very convenient.  Many of my colleagues and I use a <a href="http://stackoverflow.com/questions/2553786/how-do-i-alias-commands-in-git">git alias</a> view more readable logs.
+<!--more-->
 <br/>
 <pre>
 [alias]
