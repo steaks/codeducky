@@ -1,4 +1,5 @@
 Using blocks are a very useful tool when rendering HTML markup with razor.  You can use them to consolidate duplicated markup into simple, readable, and reusable C# methods.
+
 <!--more-->
 For example, you can centralize code for footnote sections that require special css styling.
 
