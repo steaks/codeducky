@@ -1,7 +1,0 @@
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\obj\Debug\CodeDuckySamples.csprojResolveAssemblyReference.cache
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\bin\Debug\CodeDuckySamples.dll
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\bin\Debug\CodeDuckySamples.pdb
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\obj\Debug\CodeDuckySamples.dll
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\obj\Debug\CodeDuckySamples.pdb
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\bin\Debug\ImpromptuInterface.dll
-C:\Users\mikea_000\Documents\Interests\CS\codeducky\madelson\CodeDuckySamples\CodeDuckySamples\bin\Debug\ImpromptuInterface.xml

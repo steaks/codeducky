@@ -116,7 +116,7 @@ dynamic list = new List<string>();
 list.Add(default(int));
 </pre>
 
-Here's the code, much of which was cobbled together by using <a href="https://www.linqpad.net/">LinqPad</a> to examine the IL for the above dynamic code.
+Here's the code:
 
 <pre>
 public static bool IsImplicitlyCastableTo(this Type from, Type to)
