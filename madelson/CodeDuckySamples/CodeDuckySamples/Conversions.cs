@@ -204,7 +204,7 @@ namespace CodeDucky
         {
             // based on the IL produced by:
             // dynamic list = new List<TTo>();
-            // list.Add(default(TFrom));
+            // list.Add(Get<TFrom>());
             // We can't use the above code because it will mimic a cast in a generic method
             // which doesn't have the same semantics as a cast in a non-generic method
 
@@ -218,9 +218,7 @@ namespace CodeDucky
                 { 
                     CSharpArgumentInfo.Create(flags: CSharpArgumentInfoFlags.None, name: null), 
                     CSharpArgumentInfo.Create(
-                        flags: typeof(TFrom).IsPrimitive || !typeof(TFrom).IsValueType || typeof(TFrom) == typeof(decimal)
-                            ? CSharpArgumentInfoFlags.UseCompileTimeType | CSharpArgumentInfoFlags.Constant
-                            : CSharpArgumentInfoFlags.UseCompileTimeType, 
+                        flags: CSharpArgumentInfoFlags.UseCompileTimeType, 
                         name: null
                     ),
                 }

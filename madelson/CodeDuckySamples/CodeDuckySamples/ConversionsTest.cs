@@ -6,6 +6,7 @@
     using System.CodeDom.Compiler;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
     using System.Text;
     using System.Threading.Tasks;
 
@@ -39,6 +40,18 @@
                 }
                 catch (Exception ex) { return false; }
             }, false);
+        }
+
+        [TestMethod]
+        public void StrawImplicitCast2()
+        {
+            this.RunTests((t1, t2) => t1.IsCastableToFromSo(t2, true), true);
+        }
+
+        [TestMethod]
+        public void StrawExplicitCast2()
+        {
+            this.RunTests((t1, t2) => t1.IsCastableToFromSo(t2, false), false);
         }
 
         private static object Cast<TFrom, TTo>() { return (TTo)(object)default(TFrom); }
@@ -84,7 +97,7 @@
             var code = string.Join(
                 Environment.NewLine,
                 new[] { "namespace A { public class B { static T Get<T>() { return default(T); } public void C() {" }
-                .Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}default({3});", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
+                .Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}Get<{3}>();", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
                     .Concat(new[] { "}}}" })
             );                
 
@@ -203,6 +216,39 @@
         public static explicit operator Operators2(int i)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    static class TypeExtensions
+    {
+        static Dictionary<Type, List<Type>> dict = new Dictionary<Type, List<Type>>() {
+        { typeof(decimal), new List<Type> { typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char) } },
+        { typeof(double), new List<Type> { typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char), typeof(float) } },
+        { typeof(float), new List<Type> { typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(long), typeof(ulong), typeof(char), typeof(float) } },
+        { typeof(ulong), new List<Type> { typeof(byte), typeof(ushort), typeof(uint), typeof(char) } },
+        { typeof(long), new List<Type> { typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(int), typeof(uint), typeof(char) } },
+        { typeof(uint), new List<Type> { typeof(byte), typeof(ushort), typeof(char) } },
+        { typeof(int), new List<Type> { typeof(sbyte), typeof(byte), typeof(short), typeof(ushort), typeof(char) } },
+        { typeof(ushort), new List<Type> { typeof(byte), typeof(char) } },
+        { typeof(short), new List<Type> { typeof(byte) } }
+    };
+        public static bool IsCastableToFromSo(this Type from, Type to, bool @implicit)
+        {
+            if (to.IsAssignableFrom(from))
+            {
+                return true;
+            }
+            if (dict.ContainsKey(to) && dict[to].Contains(from))
+            {
+                return true;
+            }
+            bool castable = from.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                            .Any(
+                                m => m.ReturnType == to &&
+                                (m.Name == "op_Implicit" ||
+                                (@implicit && m.Name == "op_Explicit"))
+                            );
+            return castable;
         }
     }
 }
