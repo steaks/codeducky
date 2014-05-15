@@ -63,7 +63,7 @@ private List<Tuple<Type, Type, CompilerError>> GenerateTestCases(IEnumerable<Typ
 	var code = string.Join(
 		Environment.NewLine,
 		new[] { "namespace A { public class B { static T Get<T>() { return default(T); } public void C() {" }
-		.Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}default({3});", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
+		.Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}Get<{3}>();", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
 			.Concat(new[] { "}}}" })
 	);                
 
@@ -169,9 +169,7 @@ private static void AttemptImplicitCast<TFrom, TTo>()
 		{ 
 			CSharpArgumentInfo.Create(flags: CSharpArgumentInfoFlags.None, name: null), 
 			CSharpArgumentInfo.Create(
-				flags: typeof(TFrom).IsPrimitive || !typeof(TFrom).IsValueType || typeof(TFrom) == typeof(decimal)
-					? CSharpArgumentInfoFlags.UseCompileTimeType | CSharpArgumentInfoFlags.Constant
-					: CSharpArgumentInfoFlags.UseCompileTimeType, 
+				flags: CSharpArgumentInfoFlags.UseCompileTimeType, 
 				name: null
 			),
 		}
