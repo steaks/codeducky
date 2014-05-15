@@ -24,6 +24,25 @@
             this.RunTests((from, to) => from.IsCastableTo(to), @implicit: false);
         }
 
+        [TestMethod]
+        public void StrawExplicitCast()
+        {
+            this.RunTests((t1, t2) =>
+            {
+                try
+                {
+                    ReflectionHelpers.GetMethod(() => Cast<object, object>())
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(t1, t2)
+                        .Invoke(null, new object[0]);
+                    return true;
+                }
+                catch (Exception ex) { return false; }
+            }, false);
+        }
+
+        private static object Cast<TFrom, TTo>() { return (TTo)(object)default(TFrom); }
+
         /// <summary>
         /// Validates the given implementation function for either implicit or explicit conversion
         /// </summary>
