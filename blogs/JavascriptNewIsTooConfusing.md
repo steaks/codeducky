@@ -11,11 +11,13 @@ As explained in <a href="http://stackoverflow.com/questions/1646698/what-is-the-
 </ol>
 </blockquote>
 
-Less eloquently, the "new" keyword can entirely change the way a function behaves!  Furthermore, it's difficult for consumers know which functions should be called with the "new" keyword (aka constructors) and which functions should not be called with the new keyword.  As a Javascript library developer, I try to help consumers invoke  constructors correctly by upholding the following requirements: 
+Less eloquently, the "new" keyword can entirely change the way a function behaves!  Furthermore, it's difficult for consumers know which functions should be called with the "new" keyword (aka constructors) and which functions should not be called with the new keyword.  As a Javascript library developer, I try to implement robust constructors upholding the following requirements: 
 <ul>
 <li>A constructor must always execute with "this" as an object created with the "new" keyword.</li>
 <li>Developers should be explicitly notified if a constructors is incorrectly invoked without the "new" keyword</li>
 </ul>
+
+<h3>Code for robust constructors</h3>
 
 I can force my constructor to be called with "new."
 <pre>
@@ -42,4 +44,46 @@ function MyConstructor(args) {
 var foo = MyConstructor(args);
 //executes with an appropriate "this" object
 var bar = new MyConstructor(args);
+</pre>
+<br/>
+Or I can expose a regular function.
+
+<pre>
+function CreateMyConstructor(args) {
+    var ret = new MyInternalConstructor(args);
+    return ret;
+    
+}
+
+//both execute MyInternalConstructor with the same "this" and return the internally created object
+var foo = CreateMyConstructor(args);
+var bar = new CreateMyConstructor(args);
+</pre>
+<br/>
+<h3>Who else uses robust constructors?</h3>
+Many popular Javascript frameworks use this pattern, so you may be using robust constructors without even knowing!
+
+<h4><a href="https://github.com/jashkenas/underscore/blob/master/underscore.js">underscore.js</a></h4>
+<pre>
+// Create a safe reference to the Underscore object for use below.
+var _ = function(obj) {
+  if (obj instanceof _) return obj;
+  if (!(this instanceof _)) return new _(obj);
+  this._wrapped = obj;
+};
+</pre>
+
+<h4><a href="http://yuilibrary.com/yui/docs/api/files/yui_js_yui.js.html">YUI</a></h4>
+<pre>
+var YUI = function() {
+    var i = 0,
+        Y = this,
+        instanceOf = function(o, type) {
+            return (o && o.hasOwnProperty && (o instanceof type));
+        },
+        if (!(instanceOf(Y, YUI))) {
+            Y = new YUI();
+        }
+    return Y;
+}
 </pre>
