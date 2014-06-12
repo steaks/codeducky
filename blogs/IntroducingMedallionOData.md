@@ -91,7 +91,7 @@ Let's say we wanted to render a grid of tasks that are due this month in our UI.
 		// we want to also return the count of all "pages" (ignoring top and skip)
 		&$inlineCount=allpages
 		&$format=json
-<pre>
+</pre>
 
 This will return a result like:
 <pre>
