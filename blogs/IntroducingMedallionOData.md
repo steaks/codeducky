@@ -51,6 +51,8 @@ Next, we'll define the controller to serve as the endpoint:
 <pre>
 public class TaskController : Controller
 {
+	// The ODataService class from MedallionOData provides a simple
+	// API for authoring service methods
 	private static readonly ODataService service = new ODataService();
 
 	[Route("/tasks")]
@@ -58,13 +60,16 @@ public class TaskController : Controller
 	{
 		using (var db = new TaskContext())
 		{
-			var tasks = db.Tasks;
+			IQuerable<Task> tasks = db.Tasks;
 			// apply permissioning, projection or other logic 
-			IQueryable<Task> permissionedTasks = ...
+			IQueryable<Task> permissionedTasks = db.Tasks...
 			
 			// use the OData service to apply additional filtering 
 			// based on the OData query parameters
-			var result = this.service.Execute(
+			// The Result class encapsulates both the result
+			// data and the data format, and thus can be used to construct
+			// an appropriate response
+			ODataService.Result result = this.service.Execute(
 				permissionedTasks, 
 				HttpUtility.ParseQueryString(this.Request.Url.Query)
 			);
@@ -83,7 +88,8 @@ Let's say we wanted to render a grid of tasks that are due this month in our UI.
 		&$top=25
 		&$orderby=DueDate,DateCreated
 		&$select=Name,DueDate
-		&$inlineCount=allpages // we want to also return the count of all "pages" (ignoring top and skip)
+		// we want to also return the count of all "pages" (ignoring top and skip)
+		&$inlineCount=allpages
 		&$format=json
 <pre>
 
