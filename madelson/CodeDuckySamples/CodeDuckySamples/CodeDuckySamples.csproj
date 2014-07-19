@@ -64,6 +64,7 @@
     <Compile Include="Enums.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="Perf.cs" />
     <Compile Include="ReflectionHelpers.cs" />
     <Compile Include="Throw.cs" />
     <Compile Include="Traverse.cs" />
