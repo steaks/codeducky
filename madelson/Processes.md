@@ -74,3 +74,43 @@ var errText = errTask.Result;
 ...
 <pre>
 
+Another issue we'd like to handle is that of a process hanging. Rather than waiting forever for the process to exit, our code would be more robust if we enforced a timeout instead:
+
+<pre>
+...
+if (!process.WaitForExit(TimeoutMillis))
+{
+	process.Kill();
+	throw new TimeoutException(...);
+}
+...
+<pre> 
+
+While we are now using async IO to read from the process streams, we are still blocking one .NET thread while waiting for the process to complete. We can further improve efficiency here by going fully async:
+
+<pre>
+// now inside an async method
+using (var process = new Process
+	{
+		...
+		EnableRaisingEvents = true,
+		...
+	}
+)
+{
+	...	
+	var processExitedSource = new TaskCompletionSource<bool>();
+	process.Exited += (o, e) => processExitedSource.SetResult(true);
+	
+	var exitOrTimeout = Task.WhenAny(processExitedSource.Task, Task.Delay(Timeout));
+	if (await exitOrTimeout.ConfigureAwait(false) != processExitedSource.Task)
+	{
+		process.Kill();
+		throw new TimeoutException(...);
+	}
+	...
+}
+<pre>
+
+Another question that might come up when trying to generalize this approach is that of data volume. If we are piping a large amount of data through the process, we'll likely want to replace the convenient ReadToEndAsync() calls with async read loops that consume each piece of data as it comes in.
+
