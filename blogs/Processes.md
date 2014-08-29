@@ -1,10 +1,14 @@
 Scripting and shell languages are often built around the ability for one process to easily launch and work with the results of others. This is the primary mode of processing in bash, while <a href="http://mentalized.net/journal/2010/03/08/5_ways_to_run_commands_from_ruby/">ruby supports at least 5 built-in approaches</a> with varying levels of flexibility and conciseness.
 
-In .NET, this is kind of operation is typically done via the <a href="http://msdn.microsoft.com/en-us/library/system.diagnostics.process(v=vs.110).aspx">System.Diagnostics.Process</a> API. The Process API is quite general and powerful, but it can be clunky and difficult to use correctly in the common use cases that are handled so well by the languages above. As a spoiler, I ended up wrapping much of this complexity into a new .NET library: <a href="https://github.com/madelson/MedallionShell">MedallionShell</a>; I'll show how that library greatly simplifies this task <a href="#medallion-shell">at the end of this post</a>. 
+In .NET, this is kind of operation is typically done via the <a href="http://msdn.microsoft.com/en-us/library/system.diagnostics.process(v=vs.110).aspx">System.Diagnostics.Process</a> API. The Process API is quite general and powerful, but it can be clunky and difficult to use correctly in the common use cases that are handled so well by the languages above. As a spoiler, I ended up wrapping much of this complexity into a new .NET library: <a href="https://github.com/madelson/MedallionShell">MedallionShell</a>. With MedallionShell, this kind of task is a one-liner:
+
+<pre>
+var output = Command.Run(pathToExecutable, arg1, ...).Result.StandardOutput;
+</pre>
 
 <!--more-->
 
-As an example, I recently wanted my application to launch an instance of NodeJS from .NET to run the <a href="http://lesscss.org/">less css</a> compiler. I needed to write to Node's standard input while capturing the standard output text, standard error text, and exit code. 
+More on that <a href="#medallion-shell">later</a>, though. For now, let's get back to Process. As a concrete example, I recently wanted my application to launch an instance of NodeJS from .NET to run the <a href="http://lesscss.org/">less css</a> compiler. I needed to write to Node's standard input while capturing the standard output text, standard error text, and exit code. 
 
 <h3 id="initial-attempt">An initial attempt</h3>
 
@@ -142,5 +146,3 @@ MedallionShell also offers operator overloads to enable bash-like redirection of
 var command = Command.Run(...) < /* input data */;
 var result = await command.Task;
 </pre> 
-
-
