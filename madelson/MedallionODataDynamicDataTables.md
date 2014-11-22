@@ -1,4 +1,4 @@
-LINQ providers such as <a href="[TODO link]>Entity Framework</a> (and therefore any OData services built on top of them) are heavily reliant on server-side static typing to define the model. This has a number of benefits, such as <a href="http://www.asp.net/web-api/overview/odata-support-in-aspnet-web-api/odata-v3/calling-an-odata-service-from-a-net-client">allowing for automatic strongly-typed endpoint code generation</a>, more robust parsing of OData queries, and added security. However, many practical applications don't fit nicely into the static query model. Luckily, the <a href="[TODO link]">MedallionOData</a> library provides an easy solution through it's ability to create dynamic OData service endpoints. We'll walk through the setup step-by-step in the context of a toy example.
+LINQ providers such as <a href="https://entityframework.codeplex.com/">Entity Framework</a> (and therefore any OData services built on top of them) are heavily reliant on server-side static typing to define the model. This has a number of benefits, such as <a href="http://www.asp.net/web-api/overview/odata-support-in-aspnet-web-api/odata-v3/calling-an-odata-service-from-a-net-client">allowing for automatic strongly-typed endpoint code generation</a>, more robust parsing of OData queries, and added security. However, many practical applications don't fit nicely into the static query model. Luckily, the <a href="https://github.com/madelson/MedallionOData">MedallionOData</a> library provides an easy solution through it's ability to create dynamic OData service endpoints. We'll walk through the setup step-by-step in the context of a toy example.
 
 <!--more-->
 
@@ -13,7 +13,7 @@ productId INT
 units INT
 </pre>
 
-Let's say we want to display an interactive table to the user that shows units ordered by customer for some user-determined set of products. Thus, the columns of the table are dynamic: we'll have one for each product selected by the user. We can easily represent this sort of query in SQL:
+Let's say we want to display an interactive table to the user that shows the number of units ordered by each customer for some user-determined set of products. Thus, the columns of the table are dynamic: we'll have one for each product selected by the user. We can easily represent this sort of query in SQL:
 
 <pre>
 -- user picked products 1, 2, and 3
@@ -30,7 +30,7 @@ However, it's more difficult to fit this into a strongly-typed IQueryable in a w
 
 <h1 id="endpoint">Creating the Data Endpoint</h1>
 
-This is where MedallionOData comes in. MedallionOData allows us to escape from the world of static schemas via the dictionary-like ODataEntity type. In fact, if our data is small enough to fit in memory, we can simply read all orders into memory and convert to the <a href="[TODO link]">ODataEntity</a> type. ODataEntity acts like a dictionary, allowing for queries with fully dynamic schemas:
+This is where MedallionOData comes in. MedallionOData allows us to escape from the world of static schemas via the dictionary-like <a href="https://github.com/madelson/MedallionOData/blob/master/MedallionOData/Client/ODataEntity.cs">ODataEntity</a> type. In fact, if our data is small enough to fit in memory, we can simply read all orders into memory and convert to the ODataEntity type. ODataEntity acts like a dictionary from string to object, allowing for queries with fully dynamic schemas:
 
 <pre>
 using (var context = new OrdersContext()) // OrdersContext is an EF DbContext
@@ -41,9 +41,10 @@ using (var context = new OrdersContext()) // OrdersContext is an EF DbContext
 		.Where(o => products.Contains(o.ProductId))
 		// work in-memory from here
 		.AsEnumerable()
-		// the same group-by as in SQL
+		// the same group-by as in the SQL above. 
+		// We'll use this to perform the pivot operation in-memory
 		.GroupBy(o => o.CustomerId)
-		// select key-value pairs representing the column values
+		// select key-value pairs representing the column values. This performs the 
 		.Select(
 			g => products.Select(
 				p => new KeyValuePair<string, object(
@@ -53,7 +54,7 @@ using (var context = new OrdersContext()) // OrdersContext is an EF DbContext
 			)
 			.Concat(new[] { new KeyValuePair<string, object>("customerId", g.Key) })
 		)
-		// convert to the ODataEntity type
+		// convert the KeyValuePairs to ODataEntity "dictionaries"
 		.Select(kvps => new ODataEntity(kvps))
 		.ToArray();
 		
@@ -62,7 +63,7 @@ using (var context = new OrdersContext()) // OrdersContext is an EF DbContext
 }
 </pre>
 
-However, in most cases we want to avoid reading all results into memory and instead only pull what the user is asking for. For this, we can take advantage of MedallionOData's <a href="[TODO link]">ODataSqlContext</a> class (introduced in <a href="[TODO link]">v1.4</a>). ODataSqlContext provides a lightweight implementation of a LINQ query provider that supports only the subset of LINQ operations that map to OData. We can construct a context by providing it with a <a href="[TODO link]">syntax</a> (for generating the right dialect of SQL) along with an <a href="[TODO link]">executor</a> (for configuring database access). In this case, we'll use the out-of-the-box support for SqlServer:
+However, in most cases we want to avoid reading all results into memory and instead only pull what the user is asking for. For this, we can take advantage of MedallionOData's <a href="https://github.com/madelson/MedallionOData/blob/master/MedallionOData/Service/Sql/ODataSqlContext.cs">ODataSqlContext</a> class (introduced in <a href="https://www.nuget.org/packages/MedallionOData/1.4.0">version 1.4</a>). ODataSqlContext provides a lightweight implementation of a LINQ query provider that supports only the subset of LINQ operations that map to OData. We can construct a context by providing it with a <a href="https://github.com/madelson/MedallionOData/blob/master/MedallionOData/Service/Sql/SqlSyntax.cs">syntax</a> (for generating the right dialect of SQL) along with an <a href="https://github.com/madelson/MedallionOData/blob/master/MedallionOData/Service/Sql/SqlExecutor.cs">executor</a> (for configuring database access). In this case, we'll use the out-of-the-box support for SqlServer:
 
 <pre>
 var sqlContext = new ODataSqlContext(
@@ -76,6 +77,7 @@ var sqlContext = new ODataSqlContext(
 Using the sql context, we can create dynamic queryables which can be filtered by MedallionOData:
 
 <pre>
+// dynamically construct the pivoted query from above
 var products = // read in products 1, 2, 3 using EF
 var pivotQuery = string.Format(@"(
 		SELECT c.name AS customer
@@ -120,7 +122,7 @@ public class ODataMvcController : Controller
 With this, requesting the following url:
 <pre>http://localhost:49884/ODataMvc/PivotedData?$format=json&productNames=wood,ore</pre>
 
-returns the following data:
+returns the following pivoted data:
 <pre>
 {
     "value": [{
@@ -141,7 +143,7 @@ returns the following data:
 
 <h1 id="grid">Creating a Grid</h1>
 
-Now that we have an endpoint that can return and query our data set via OData, we can build an AJAX-driven client side grid to display this data. Many javascript grid libraries support OData. Here, we will use the free <a href="[TODO link]">JQuery DataTables</a> library with the <a href="[TODO link]">OData plugin</a>. Here's the relevant cshtml:
+Now that we have an endpoint that can return and query our data set via OData, we can build an AJAX-driven client side grid to display this data. Many javascript grid libraries support OData. Here, we will use the open-source <a href="http://www.datatables.net/">JQuery DataTables</a> plugin with the <a href="http://vpllan.github.io/jQuery.dataTables.oData/">OData connector</a>. Here's the relevant cshtml:
 
 <pre>
 <div>Enter product name columns here:</div>
@@ -168,3 +170,5 @@ $('#productNames').change(function () {
 	});
 });
 </pre>
+
+That's all we need! We now have a grid which can be fully sorted and filtered on the client side, with those sorts and filters being passed to the server via OData and ultimately being performed in SQL on the database. You can try this example yourself by cloning the <a href="https://github.com/madelson/MedallionOData">MedallionOData git repository</a>, debugging the Samples web project, and visiting the /ODataMvc/PivotedDataTable route (requires a local <a href="http://www.microsoft.com/en-us/server-cloud/products/sql-server-editions/sql-server-express.aspx">SqlExpress</a> instance).
