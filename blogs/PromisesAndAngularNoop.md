@@ -7,6 +7,7 @@ var deferred = $q.defer();
 deferred.promise.then(mySuccessCallback, angular.noop, myNotifyCallback);
 deferred.promise.then(mySuccessCallback, null, myNotifyCallback);
 </pre><br/>
+<!--more-->
 Let's begin with a simple promise:
 <pre>
 var deferred = $q.defer();
