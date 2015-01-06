@@ -1,4 +1,4 @@
-Hey awesome Javascript developers!  Tonight I wanted to look at the <a href="http://en.wikipedia.org/wiki/Lazy_initialization">Lazy initialization</a> pattern.  It's a useful pattern that unfortunately is not promoted much in Javascript culture.  Some languages go so far as making <a href="http://stackoverflow.com/questions/7484928/what-does-a-lazy-val-do/7484933#7484933">lazy a keyword</a>.
+Hey awesome Javascript developers!  Tonight I wanted to look at the <a href="http://en.wikipedia.org/wiki/Lazy_initialization">lazy initialization</a> pattern.  It's a useful pattern that unfortunately is not promoted much in Javascript culture.  Some languages go so far as making <a href="http://stackoverflow.com/questions/7484928/what-does-a-lazy-val-do/7484933#7484933">lazy a keyword</a>.
 
 <!--more-->
 
