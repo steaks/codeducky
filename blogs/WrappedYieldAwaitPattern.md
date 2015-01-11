@@ -1,5 +1,7 @@
 Recently, I've been writing a lot of code which gets packaged up into libraries to be consumed by other developers. One of the key aspects of writing this sort of code effectively is to be stringent about argument validation. The earlier your code detects invalid arguments, the easier it is for consumers of your APIs to diagnose errors. Argument checking is fairly straight-forward, but I recently came upon an interesting subtlety when working with the C# <a href="http://msdn.microsoft.com/en-us/library/9k7k7cf0.aspx">yield</a> keyword. 
 
+<!--more-->
+
 For example, let's consider implementing the LINQ method <a href="http://msdn.microsoft.com/en-us/library/vstudio/bb534804(v=vs.100).aspx">Enumerable.TakeWhile</a>. TakeWhile has two simple conditions to check for: either argument can be null. We can easily implement TakeWhile using yield:
 
 <pre>
