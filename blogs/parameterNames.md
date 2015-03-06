@@ -1,4 +1,4 @@
-C# 4 introduced named and optional parameters: the ability to set default values for arguments and explicitly label arguments by name instead of just position. Despite being a relatively minor features, named and optional parameters actually do quite a lot to make coding simpler to write, read, and consume. So much so, that I find myself sorely missing this feature when working in languages without it (aka Javascript).
+C# 4 introduced named and optional parameters: the ability to set default values for arguments and explicitly label arguments by name instead of just position. Despite being a relatively minor features, named and optional parameters actually do quite a lot to make coding simpler to write, read, and consume. So much so, that I find myself sorely missing this feature when working in languages without it (e. g. JavaScript).
 
 <!--more-->
 
