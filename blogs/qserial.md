@@ -232,6 +232,12 @@ var task2 = {
 
 $q.serial({ one: task1, two: task2 });
 </pre>
+<pre>
+one
+notified two
+//5 seconds
+fail two
+</pre>
 <br/>
 
 So that's $q.serial, a generalized way to execute async tasks serially in AngularJS.
