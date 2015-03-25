@@ -182,7 +182,7 @@ angular.module("qImproved", [])
         prevPromise = nextPromise;
       });
 
-      return prevPromise;
+      return prevPromise || $delegate.when();
     }
 
     $delegate.serial = serial;
