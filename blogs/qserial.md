@@ -116,7 +116,7 @@ function washDishesTask() {
   var deferred = $q.defer();
   $timeout(function () { 
     washDishes(); 
-    $q.defer(); 
+    deferred.resolve(); 
   }, 1000);
   return deferred.promise;
 }
