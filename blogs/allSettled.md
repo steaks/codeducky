@@ -1,4 +1,4 @@
-<a href="https://github.com/kriskowal/q">Q</a> has <a href="https://github.com/kriskowal/q/wiki/API-Reference#promiseallsettled">Q.allSettled</a>.  <a href="https://docs.angularjs.org/api/ng/service/$q">$q</a> does not.  I've noticed a lot of AngularJS devs request $q.allSettled.  So here it is!  <a href="http://jsfiddle.net/0sr65m7t/">JS Fiddle</a>
+<a href="https://github.com/kriskowal/q">Q</a> has <a href="https://github.com/kriskowal/q/wiki/API-Reference#promiseallsettled">Q.allSettled</a>.  <a href="https://docs.angularjs.org/api/ng/service/$q">$q</a> does not.  The main difference between $q.all and $q.allSettled is that $q.allSettled waits for all promises to resolve or reject (i.e. "settle").  Then it resolves.  $q.all rejects when the first project is rejected.  I've noticed a lot of AngularJS devs request $q.allSettled.  So here it is!  <a href="http://jsfiddle.net/0sr65m7t/">JS Fiddle</a>.
 
 <!--more-->
 <pre>
