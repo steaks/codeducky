@@ -1,0 +1,43 @@
+Object-oriented programming (OOP) occupies a unique position in the software industry, being at once a core part of many popular languages and a pattern much maligned for producing low-quality code.
+
+Like most language paradigms, "object-oriented programming" has no strict popular definition. Instead, it is typically seen as a group of loosely-related concepts. Most purportedly object-oriented languages contain only a subset of these concepts.
+
+<!--more-->
+
+TODO
+
+<h1 id="good-parts">Good parts<h1>
+
+<h2 id="objects">Objects</h2>
+Like object-oriented programming. The concept of an "object" can be difficult to pin down. In my mind, what defines an object is the <strong>combination of data and logic</strong> into a single unit. This differentiates it from something like a C struct, which is purely data.
+
+Objects are a powerful concept because they are extremely flexible. For example, the a <a href="http://en.wikipedia.org/wiki/Closure_%28computer_programming%29">closure</a> is essentially an object whose data is the captured environment and whose logic is the function to invoke.
+
+
+
+<h2 id="interfaces">Interfaces</h2>
+
+- collections
+
+<h2 id="object-interface">The Object Interface</h2>
+
+http://en.wikipedia.org/wiki/Object-oriented_programming
+I find OOP philosophically unsound. It claims that everything is an object. Even if it is true it is not very interesting — saying that everything is an object is saying nothing at all.
+
+This may be true in some OOP languages, but in many being an object has a real meaning because all objects conform to a common interface. For example, in Javascript, Java and C#, all objects support conversion to a string. This is quite useful for logging and debugging. Java and C# additionally provide objects with equality and hashcode operations, which enable widespread use of the efficient hash table datastructure. 
+
+encapsulation/privacy/invariant enforcement
+
+DIY primitives
+
+reflection
+
+Bad parts
+inheritance
+- mocking
+
+null handling & defaults
+
+modeling
+
+- interconnected state: car.Drive() -> not really an action on a car
