@@ -15,7 +15,7 @@ Recently, I faced just such a challenge which I solved by implementing a small <
 
 <h3 id="problem">The Problem</h3>
 
-I was recently reworking some code that establishes a user's session in several legacy sub-systems of an application. Because this process can be expensive and isn't always needed, I wanted to do it lazily. The initialization code looked something like this:
+I was recently reworking some code that establishes a user's session in a legacy sub-system of our application. Because this process can be expensive and isn't always needed, I wanted to do it lazily. The initialization code looked something like this:
 
 <pre>
 var existingSessionInfo = GetLegacySessionInformation(); // HTTP GET request to authentication service
@@ -23,11 +23,9 @@ if (existingSessionInfo != null) {
 	return existingSessionInfo;
 }
 
-var token1 = LogIntoLegacySystem1(); // HTTP POST request to one legacy system
+var legacySessionInfo = LogIntoLegacySystem(); // HTTP POST request to legacy system
 
-var token2 = LogIntoLegacySystem2(token1); // HTTP POST request to another legacy system
-
-SaveLegacySessionInfo(new LegacySessionInfo(token1, token2)); // HTTP POST request to authentication service
+SaveLegacySessionInfo(legacySessionInfo); // HTTP POST request to authentication service
 </pre>
 
 The problem, of course, is that this code isn't thread-safe. If two threads get past the initial check for information, both will end up trying to establish sessions for the same user. If all steps were thread-safe and idempotent we might still be okay. Unfortunately, as is so often true with legacy code, that was not the case here.
@@ -60,11 +58,9 @@ using (distributedLock.Acquire())
 		return existingSessionInfo;
 	}
 
-	var token1 = LogIntoLegacySystem1(); // HTTP POST request to one legacy system
+	var legacySessionInfo = LogIntoLegacySystem(); // HTTP POST request to legacy system
 
-	var token2 = LogIntoLegacySystem2(token1); // HTTP POST request to another legacy system
-
-	SaveLegacySessionInfo(new LegacySessionInfo(token1, token2)); // HTTP POST request to authentication service
+	SaveLegacySessionInfo(legacySessionInfo); // HTTP POST request to authentication service
 }
 </pre>
 
