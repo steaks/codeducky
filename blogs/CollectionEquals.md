@@ -63,7 +63,7 @@ foreach (var item in that)
 return dict.Count == 0;
 </pre>
 
-While clunkier than the functional approaches, this implements the right semantics in linear time. For this reason, it will form the basis of our optimized solution. One odd caveat with the above code, though is that .NET's dictionary does not, allow null keys. A generic solution should suppor collections with null elements, so we'll need to work around this limitation.
+While clunkier than the functional approaches, this implements the right semantics in linear time. For this reason, it will form the basis of our optimized solution. One odd caveat with the above code, though, is that .NET's dictionary does not, allow null keys. A generic solution should support collections with null elements, so we'll need to work around this limitation.
 
 <h1 id="improvements-and-optimizations">Improvements and Optimizations</h1>
 
@@ -95,7 +95,7 @@ if (TryFastCount(@this, out thisCount)
 }
 </pre>
 
-While casting is always unsavory, this optimization can make a huge difference in performance because in many real cases we can expect that this will be called with non-lazy collections. Cast-free alternatives (such as defining an overload of CollectionEquals() that operates on ICollection) tend to equally or more verbose, and also fail to apply the optimization in cases where one of the arguments is a materialized collection at runtime but has a static type of IEnumerable. This is likely why the cast strategy is used by <a href="http://referencesource.microsoft.com/#System.Core/System/Linq/Enumerable.cs,41ef9e39e54d0d0b">Enumerable.Count</a>.
+While casting is always unsavory, this optimization can make a huge difference in performance because in many real cases we can expect that this will be called with non-lazy collections. Cast-free alternatives (such as defining an overload of CollectionEquals() that operates on ICollection) tend to equally or more verbose, and also fail to apply the optimization in cases where one of the arguments is a materialized collection at runtime but has a static type of IEnumerable. This is likely why a very similar cast strategy is also used by <a href="http://referencesource.microsoft.com/#System.Core/System/Linq/Enumerable.cs,41ef9e39e54d0d0b">Enumerable.Count</a>.
 
 <h2 id="build-probe-choice">Choosing the Build and Probe Sides</h2>
 
