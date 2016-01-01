@@ -248,7 +248,7 @@ Since we are using a custom data structure, we can also do away with the pesky n
 
 <h1 id="results">Results</h1>
 
-So, how well did we do? Here are some benchmarks I ran. Note that all results are displayed as a percentage vs. the dictionary method code. Thus, <strong>lower numbers are better, and any number less than 100% represents an improvement</strong>. The collections used were of length ~1000.
+So, how well did we do? Here are some benchmarks I ran. Note that all results are displayed as a percentage vs. the dictionary method code. Thus, <strong>lower numbers are better, and any number less than 100% represents an improvement</strong>. The collections used were of of length ~1000 and contained integers.
 
 <style>
 	table.results th {
@@ -269,22 +269,62 @@ So, how well did we do? Here are some benchmarks I ran. Note that all results ar
 		<th>Elements Enumerated</th>
 		<th>Equals() Calls</th>
 		<th>GetHashCode() Calls</th>
+		<th>Key Optimization</th>
 	</tr>
 	<tr>
-		<td>int arrays with different lengths</td>
-		<td>1.57%</td>
+		<td>arrays with different lengths</td>
+		<td>1.3%</td>
 		<td>0.00%</td>
 		<td>0.00%</td>
 		<td>0.00%</td>
+		<td>Fast Count</td>
 	</tr>
 	<tr>
-		<td>int arrays with different lengths</td>
-		<td></td>
-		<td></td>
-		<td></td>
-		<td></td>
+		<td>larger array and smaller lazy sequence</td>
+		<td>24.1%</td>
+		<td>33.4%</td>
+		<td>0.1%</td>
+		<td>16.7%</td>
+		<td>Build/Probe Choice</td>
+	</tr>
+	<tr>
+		<td>smaller array and larger lazy sequence</td>
+		<td>30.4%</td>
+		<td>33.5%</td>
+		<td>0.1%</td>
+		<td>16.7%</td>
+		<td>Build/Probe Choice</td>
+	</tr>
+	<tr>
+		<td>sequence-equal lazy sequences</td>
+		<td>18.4%</td>
+		<td>100%</td>
+		<td>33.3%</td>
+		<td>0.0%</td>
+		<td>Sequence Equality Check</td>
+	</tr>
+	<tr>
+		<td>almost sequence-equal lazy sequences</td>
+		<td>29.2%</td>
+		<td>100%</td>
+		<td>33.3%</td>
+		<td>0.0%</td>
+		<td>Sequence Equality Check</td>
+	</tr>
+	<tr>
+		<td>equal but out-of-order lazy sequences</td>
+		<td>59.2%</td>
+		<td>100%</td>
+		<td>50.1%</td>
+		<td>50.0%</td>
+		<td>Key Lookup Reduction</td>
 	</tr>
 </table>
 
 <h1 id="conclusion">Conclusion</h1>
 
+Obviously, there are many more potential benchmarks we could run, but hopefully this suite demonstrates the efficacy of our optimizations. 
+
+I plan to publish this functionality shortly as part of a new <a href="[todo]">utility library</a>, but for now I've made the complete code available <a href="[todo]">here</a>.
+
+If you have other ideas for how to improve this code still further, don't hesitate to post them in the comments!
