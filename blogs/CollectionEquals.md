@@ -1,21 +1,4 @@
-
-Engineering a Collection Equality Function
-
-- the problem
-- quick solutions
-	- except/except
-	- sort (issues: comparable n lg n)
-	- dictionary (issues: null, can fix with struct)
-- improvements and optimizations
-	- fast count
-	- build/probe choice
-	- sequence check
-	- increment dictionary
-- performance analysis & results
-- call for more ideas
-_________________________________________
-
-I've <a href="[TODO utilities post link]">mentioned before</a> that <strong>collection equality</strong> is a relatively common and useful operation that has no built-in implementation in the .NET framework:
+I've <a href="http://www.codeducky.org/10-utilities-c-developers-should-know-part-two/">mentioned before</a> that <strong>collection equality</strong> is a relatively common and useful operation that has no built-in implementation in the .NET framework:
 
 <pre>
 bool CollectionEquals<T>(
@@ -24,7 +7,7 @@ bool CollectionEquals<T>(
 	IEqualityComparer<T> comparer = null);
 </pre>
 
-Here I'm differentiating <em>collection</em> equality from <em><a href="[todo]">sequence</a></em> or <em><a href="[todo]">set</a></em> equality: I want two collections to be considered equal if and only if they contain exact same elements, respecting duplicates but disregarding order. While I've <a href="[todo]">implemented this functionality</a> in the past, for a new <a href="[todo]">utility library I'm creating</a> I wanted to see how much I could tune the implementation.
+Here I'm differentiating <em>collection</em> equality from <em><a href="https://msdn.microsoft.com/library/bb348567%28v=vs.100%29.aspx?f=255&MSPPError=-2147217396">sequence</a></em> or <em><a href="https://msdn.microsoft.com/en-us/library/dd412096(v=vs.110).aspx">set</a></em> equality: I want two collections to be considered equal if and only if they contain exact same elements, respecting duplicates but disregarding order. While I've <a href="https://gist.github.com/madelson/9178059#file-helpers-cs-L161">implemented this functionality</a> in the past, for a new <a href="https://github.com/madelson/MedallionUtilities/tree/master/MedallionCollections">utility library I'm creating</a> I wanted to see how much I could tune the implementation.
 
 <!--more-->
 
@@ -34,17 +17,17 @@ Before jumping into my solution, it's worth going through various common approac
 
 <h2 id="sort-method">Sorting + SequenceEqual</h2>
 
-One popular option is to leverage <a href="[todo]">Enumerable.SequenceEqual</a> by simply sorting the collections:
+One popular option is to leverage <a href="https://msdn.microsoft.com/library/bb348567%28v=vs.100%29.aspx?f=255&MSPPError=-2147217396">Enumerable.SequenceEqual</a> by simply sorting the collections:
 
 <pre>
 return @this.OrderBy(x => x).SequenceEqual(@that.OrderBy(x => x))
 </pre>
 
-This one-liner is fine for many use-cases, but it is a poor generic solution. For one thing, it requires that the input elements be comparable, which is far from a given. It also makes it difficult for us to override the default <a href="[todo]"IEqualityComparer</a>: while SequenceEqual does have an overload that takes an IEqualityComparer, we'd also need a custom <a href="[todo]">IComparer</a> with the same equality semantics to pass to OrderBy. Finally, the sort calls mean that this method has an O(nlgn) runtime; we'll see that other solutions can do better.
+This one-liner is fine for many use-cases, but it is a poor generic solution. For one thing, it requires that the input elements be comparable, which is far from a given. It also makes it difficult for us to override the default <a href="https://msdn.microsoft.com/en-us/library/ms132151%28v=vs.110%29.aspx?f=255&MSPPError=-2147217396">IEqualityComparer</a>: while SequenceEqual does have an overload that takes an IEqualityComparer, we'd also need a custom <a href="https://msdn.microsoft.com/en-us/library/8ehhxeaf(v=vs.110).aspx">IComparer</a> with the same equality semantics to pass to OrderBy. Finally, the sort calls mean that this method has an O(nlgn) runtime; we'll see that other solutions can do better.
 
 <h2 id="except-method">Except</h2>
 
-Another quick one-liner is to use <a href="[todo]">Except</a>:
+Another quick one-liner is to use <a href="https://msdn.microsoft.com/library/bb300779(v=vs.100).aspx">Except</a>:
 
 <pre>
 return @this.Except(that)
@@ -112,11 +95,11 @@ if (TryFastCount(@this, out thisCount)
 }
 </pre>
 
-While casting is always unsavory, this optimization can make a huge difference in performance because in many real cases we can expect that this will be called with non-lazy collections. Cast-free alternatives (such as defining an overload of CollectionEquals() that operates on ICollection) tend to equally or more verbose, and also fail to apply the optimization in cases where one of the arguments is a materialized collection at runtime but has a static type of IEnumerable. This is likely why the cast strategy is used by <a href="[todo refsource]">Enumerable.Count</a>.
+While casting is always unsavory, this optimization can make a huge difference in performance because in many real cases we can expect that this will be called with non-lazy collections. Cast-free alternatives (such as defining an overload of CollectionEquals() that operates on ICollection) tend to equally or more verbose, and also fail to apply the optimization in cases where one of the arguments is a materialized collection at runtime but has a static type of IEnumerable. This is likely why the cast strategy is used by <a href="http://referencesource.microsoft.com/#System.Core/System/Linq/Enumerable.cs,41ef9e39e54d0d0b">Enumerable.Count</a>.
 
 <h2 id="build-probe-choice">Choosing the Build and Probe Sides</h2>
 
-In the dictionary-based comparison approach, the two arguments play different roles. As in a <a href="[todo]">hash join</a> in a relational database, one of the collections is used to <em>build</em> the dictionary of element counts, while the other is used to <em>probe</em> the dictionary, checking for matches. Previously, we arbitrarily chose the first collection to be the build side. Can we be smarter about this? Does it even matter? 
+In the dictionary-based comparison approach, the two arguments play different roles. As in a <a href="https://en.wikipedia.org/wiki/Hash_join">hash join</a> in a relational database, one of the collections is used to <em>build</em> the dictionary of element counts, while the other is used to <em>probe</em> the dictionary, checking for matches. Previously, we arbitrarily chose the first collection to be the build side. Can we be smarter about this? Does it even matter? 
 
 First, note that, if the collections end up being equal, then the choice is irrelevant because we'll do the same operations either way. However, when the collections are unequal then this choice can impact performance. As an example, imagine we're comparing the collections [1] and [1 .. 1000000]. If we pick the singleton collection as the build side, we create a dictionary of size one, and only have to enumerate two elements of the big collection to discover that the two are unequal. If, on the other hand, we use the singleton as the probe side, then we waste a lot of time building a dictionary of size 1000000 before returning. 
 
@@ -201,7 +184,7 @@ Note that, in order to combine this approach with counting-based optimizations, 
 
 <h2 id="double-check">Reducing Key Lookups</h2>
 
-Assuming that we do get past the SequenceEqual check, one of the remaining innefficiencies occurs in creating and deconstructing the dictionary. Both the increment and decrement operations require two key lookups, one to fetch the existing count value and one to set the new value. This means two calls to GetHashCode() and at least two calls to Equals() for each element. We can address this issue by using a custom, simpler datastructure that offers built-in increment and decrement operations using a single key lookup. Here is an outline of the code (see the full code <a href="[todo]">here</a>):
+Assuming that we do get past the SequenceEqual check, one of the remaining innefficiencies occurs in creating and deconstructing the dictionary. Both the increment and decrement operations require two key lookups, one to fetch the existing count value and one to set the new value. This means two calls to GetHashCode() and at least two calls to Equals() for each element. We can address this issue by using a custom, simpler datastructure that offers built-in increment and decrement operations using a single key lookup. Here is an outline of the code (see the full code <a href="https://gist.github.com/madelson/6378650cbf3e0148d5ef#file-collectionequals-cs-L199">here</a>):
 
 <pre>
 private sealed class CountingSet<T>
@@ -325,6 +308,6 @@ So, how well did we do? Here are some benchmarks I ran. Note that all results ar
 
 Obviously, there are many more potential benchmarks we could run, but hopefully this suite demonstrates the efficacy of our optimizations. 
 
-I plan to publish this functionality shortly as part of a new <a href="[todo]">utility library</a>, but for now I've made the complete code available <a href="[todo]">here</a>.
+I plan to publish this functionality shortly as part of a new <a href="https://github.com/madelson/MedallionUtilities/tree/master/MedallionCollections">utility library</a>, but for now I've made the complete code available <a href="https://gist.github.com/madelson/6378650cbf3e0148d5ef">here</a>.
 
 If you have other ideas for how to improve this code still further, don't hesitate to post them in the comments!
