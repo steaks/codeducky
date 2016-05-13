@@ -2,11 +2,11 @@ When you think of traversing a tree, what comes to mind? Recursion? Looping with
 
 <!--more-->
 
-<h1 id="linked-lists">Linked lists</h1>
+<h2 id="linked-lists">Linked lists</h2>
 
 Let's start with the simplest type of "tree": a singly-linked list. Such a list is traversed by following the sequence of "next" references until we reach a null. We want to define an IEnumerable<T> that executes this method of traversal. We could work with .NET's built-in LinkedList<T> class, but we want our approach to be more general. LinkedList<T> is rarely used, but "natural" linked lists occur commonly in programming. Think about a "scope" class which holds a reference to an outer scope, or an Exception which stores an inner Exception. <i>Any class which holds a reference to it's own type is a linked list</i>!
 
-<h2 id="linked-list-loop">Enumerating a linked list</h2>
+<h3 id="linked-list-loop">Enumerating a linked list</h3>
 
 With that definition in mind, we can write a generic traversal loop as follows:
 
@@ -22,7 +22,7 @@ for (var node = root; node != null; node = next(node))
 
 First, let's look at how we've abstracted away the concept of a linked list. Since there is no general interface which all naturally-occurring linked lists implement, we simply work with (a) the first element of the list and (b) a function to retrieve the next element. From these, we can write a simple for-loop that follows the chain of next elements until we reach the terminating null reference.
 
-<h2 id="linked-list-traverse">Encapsulating the enumeration</h2>
+<h3 id="linked-list-traverse">Encapsulating the enumeration</h3>
 
 From there, all we need to do to genericize this is to turn it into an <a href="https://msdn.microsoft.com/en-us/library/mt639331.aspx">iterator block</a> using yield return:
 
@@ -50,7 +50,7 @@ public static class Traverse
 
 The separation of the code into two methods is just an example of <a href="http://www.codeducky.org/better-validation-yield-asyncawait-wrapper-pattern/">this pattern</a> to ensure eager argument validation. The real meat of the code is in AlongIterator. Under the hood, the C# compiler does the hard work of turning our simple for-loop into a stateful IEnumerator object which lazily advances as new elements are requested. This method may look familiar; I've mentioned it previously in <a href="http://www.codeducky.org/10-utilities-c-developers-should-know-part-one/">this post</a>.
 
-<h2 id="linked-list-usage">Let's put it to work!</h2>
+<h3 id="linked-list-usage">Let's put it to work!</h3>
 
 Here are some examples of how this can be used:
 
@@ -70,7 +70,7 @@ var random = new Random(1);
 var infiniteRandomWalk = Traverse.Along(new { value = 0 }, v => new { value = v.value + random.Next(-1, 2) }); 
 </pre>
 
-<h1 id="trees">Trees</h1>
+<h2 id="trees">Trees</h2>
 
 Ok enough with linked lists. We started out by discussing arbitrary trees where each node may have multiple children. Much like before, we want to define trees in a super generic way:
 
@@ -81,7 +81,7 @@ Func<T, IEnumerable<T>> children = ...; // gets the children of a node
 
 Unlike with linked lists, there's no single standard order to traversing a tree. Should we start with the root nodes or the leaf nodes? Do we go level-by-level or subtree-by-subtree? Let's focus on one common approach: <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth-first traversal</a>.
 
-<h2 id="tree-recursion">Enumerating with recursion</h2>
+<h3 id="tree-recursion">Enumerating with recursion</h3>
 
 In depth-first traversal, we exhaustively explore the subtree rooted at each child element before exploring the next child element at each level. Here's a simple recursive implementation:
 
@@ -99,7 +99,7 @@ public static void DepthFirst<T>(T node, Func<T, IEnumerable<T>> children)
 }
 </pre>
 
-<h2 id="tree-traverse">Encapsulating the enumeration</h2>
+<h3 id="tree-traverse">Encapsulating the enumeration</h3>
 
 Unfortunately, recursion doesn't work very well with yield return. To convert this to an IEnumerable-based approach, we'll switch gears a bit by replacing the implicit call stack with an explicit stack data structure. Here's a first try:
 
@@ -214,7 +214,7 @@ public static class Traverse
 
 With this approach, we advance each enumerator of children just enough and just in time to get the elements we actually plan to use. Because we leave a bunch of IDisposable IEnumerators around, however, we need to add some extra cleanup logic in a finally block in case the caller doesn't enumerate the sequence all the way to the end.
 
-<h2 id="tree-usage">Let's put it to work!</h2>
+<h3 id="tree-usage">Let's put it to work!</h3>
 
 With Traverse.DepthFirst, we can now expand our exception chain search logic to work with AggregateExceptions that have multiple inner exceptions:
 
@@ -255,7 +255,7 @@ var dependencyTree = Traverse.DepthFirst(
 
 This pattern both guarantees that the output sequence is distinct and saves us the trouble of exploring the same subtree multiple times.
 
-<h1 id="conclusion">Conclusion</h1>
+<h2 id="conclusion">Conclusion</h2>
 
 In this post we examined linked list and depth-first traversal, but it's just as easy to use the same approach to encapsulate other techniques such as breadth-first traversal or in-order traversal for binary trees. These methods make code cleaner and more concise by letting us re-use traversal logic and easily combine it with LINQ operators. Furthermore, the fact that these techniques avoid recursion means that we aren't vulnerable to stack overflow exceptions when working with large amounts of data. So, next time you find yourself writing a recursive traversal, consider trying to replace it with one of these generic traversal methods and seeing how it might simplify the code. If you don't want to write these methods yourself, you can always reference them from <a href="https://github.com/madelson/MedallionUtilities/tree/master/MedallionCollections#medallioncollections">MedallionCollections</a>!
 
