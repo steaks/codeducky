@@ -1,0 +1,77 @@
+Android Interprocess Communication
+
+Recenty I've written a lot of Android code.  One feature I built was pretty complex, so I isolated it to its own process.  Spinning up a new process was easy.  Running code in a separate process was easy.  But I couldn't fine a simple, elegant method for communicating between processes.  So I implemented my own infrastructure.
+
+I wanted to communicate between my main thread and my service running on a separate process:
+
+<ol>
+  <li>Main process sends message to service</li>
+  <li>Service executes code according to message</li>
+  <li>Service sends message back to main process</li>
+  <li>Main process executes according to message</li>
+</ol>
+
+Android provides good mechanism for 1 and 2.  But implementing 3 and 4 are verbose and painful.
+
+<ol>
+  <li>Context.startService</li>
+  <li>Context.bindService</li>
+</ol>
+
+To implement steps 3 and 4 I created RemoteCallback.  RemoteCallback let's you create a callback in one process and invoke it from a different process.
+
+Here's an example of how it works:
+
+MainActivity.java
+<pre>
+public void startServiceFromMainProcess() {
+  //Regular Android code that creates an intent to start our remote process
+  Intent intent = new Intent("MyAction", MyRemoteService.class);
+  intent.putExtra("messageFromMainProcess", "Hi remote process!");
+
+  //Create the callback that will be invoked later
+  SimpleCallback callback = SimpleCallback.register(new Action<Intent>() {
+    @Override
+    public void run(Intent i) {
+        String messageFromProcessB = i.getStringExtra("messageFromProcessB");
+        Log.d("MainProcess", messageFromProcessB); //Prints Hi back main process!
+    }
+  });
+
+  //Tell the intent about this callback so the remote process can invoke it later.
+  callback.setCallbackInfoFor(intent);
+
+  this.startService(intent);
+}
+</pre>
+
+RemoteService.java
+<pre>
+public int onStartCommand(Intent intent, int flags, int startId) {
+  //Regular Android code, we get the message from the main process.
+  String messageFromMainProcess = intent.getStringExtra("messageFromMainProcess");
+  Log.d("RemoteProcess", messageFromMainprocess); //Prints "Hi remote process"
+
+  //Create a new intent that will eventually invoke our callback.  We're
+  //able to create an approripate intent because we stored info about our
+  //registerd callback via callback.setCallbackInfoFor(intent);
+  Intent callbackIntent = SimpleCallback.createCallbackIntent(intent);
+  callbackIntent.putExta("messageFromProcessB", "Hi back main process!");
+
+  Invoke our callback on the main process
+  SimpleCallback.invokeCallback(callbackIntent);
+}
+</pre>
+
+AndroidManifest.java
+
+<pre>
+<!-- We need to register a RemoteCallbackReciver in the main process because under the covers RemoteCallback uses Recievers to broadcast and handle messages -->
+<receiver android:enabled="true" android:exported="false" android:label="MainProcessCallbackReceiver" android:name="path.to.RemoteCallbackReceiver" />
+</pre>
+
+So what did this code do?  First, the main process created a regular intent.  Then we created a callback (aka a function to be invoked later).  Additionally, under the covers
+SimpleCallback.register gave this callback a unique callbackId so we can reference it later.  Finally, we told the intent about our callback in callback.setCallbackInfoFor(intent).
+
+The remote service received the intent with callback info.  With invokeCallback, it broadcasted a signal to RemoteCallbackReciever in the main process which looked up the callbackId
+and invoked our callback.
